@@ -2,11 +2,19 @@
   "name": "flipper",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20.9.0"
+  },
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --hostname 127.0.0.1",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "smoke:calc": "tsx -e \"import {netAfterTax,profit} from './lib/calc'; if(profit(100000,80000,0.04)!==16000) throw new Error('fail'); console.log('ok')\"",
+    "smoke:cache": "tsx scripts/smoke-cache.ts",
+    "smoke:aodp": "tsx scripts/smoke-aodp.ts",
+    "smoke:flips": "tsx scripts/smoke-flips.ts",
+    "build:item-names": "tsx scripts/build-item-names.ts"
   },
   "dependencies": {
     "next": "16.2.10",
@@ -21,6 +29,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
     "tailwindcss": "^4",
+    "tsx": "^4.23.1",
     "typescript": "^5"
   }
 }
