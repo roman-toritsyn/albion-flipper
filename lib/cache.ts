@@ -26,9 +26,17 @@ declare global {
   // Persist across hot reloads in Next.js dev
   // eslint-disable-next-line no-var
   var __flipperPriceCache: MemoryStore | undefined;
+  // eslint-disable-next-line no-var
+  var __flipperCraftPriceCache: MemoryStore | undefined;
 }
 
-function store(): MemoryStore {
+function storeFor(kind: "flips" | "craft"): MemoryStore {
+  if (kind === "craft") {
+    if (!globalThis.__flipperCraftPriceCache) {
+      globalThis.__flipperCraftPriceCache = { entry: null, inflight: null };
+    }
+    return globalThis.__flipperCraftPriceCache;
+  }
   if (!globalThis.__flipperPriceCache) {
     globalThis.__flipperPriceCache = { entry: null, inflight: null };
   }
@@ -40,8 +48,11 @@ function isFresh(entry: CacheEntry, now: number): boolean {
 }
 
 export function invalidate(): void {
-  const s = store();
-  s.entry = null;
+  storeFor("flips").entry = null;
+}
+
+export function invalidateCraft(): void {
+  storeFor("craft").entry = null;
 }
 
 export function getCacheMeta(now: number = Date.now()): {
@@ -50,7 +61,7 @@ export function getCacheMeta(now: number = Date.now()): {
   expiresAt: number | null;
   ageMs: number | null;
 } {
-  const entry = store().entry;
+  const entry = storeFor("flips").entry;
   if (!entry) {
     return { hasEntry: false, fetchedAt: null, expiresAt: null, ageMs: null };
   }
@@ -62,16 +73,13 @@ export function getCacheMeta(now: number = Date.now()): {
   };
 }
 
-/**
- * Get Europe prices from memory cache or fetcher.
- * `fresh=true` only forces a re-fetch after FRESH_COOLDOWN_MS since last successful fetch.
- */
-export async function getOrFetchPrices(
+async function getOrFetch(
+  kind: "flips" | "craft",
   fetcher: () => Promise<AodpPriceRow[]>,
   options: { fresh?: boolean; now?: number } = {},
 ): Promise<CacheResult> {
   const now = options.now ?? Date.now();
-  const s = store();
+  const s = storeFor(kind);
   const wantFresh = options.fresh === true;
 
   if (s.entry && isFresh(s.entry, now)) {
@@ -99,7 +107,6 @@ export async function getOrFetchPrices(
   const fetchStartedAt = now;
   s.inflight = (async () => {
     const data = await fetcher();
-    // Prefer caller clock for tests; wall clock otherwise.
     const fetchedAt = options.now !== undefined ? fetchStartedAt : Date.now();
     const entry: CacheEntry = {
       data,
@@ -124,7 +131,27 @@ export async function getOrFetchPrices(
   }
 }
 
+/**
+ * Get Europe prices from memory cache or fetcher (BM city flips).
+ * `fresh=true` only forces a re-fetch after FRESH_COOLDOWN_MS since last successful fetch.
+ */
+export async function getOrFetchPrices(
+  fetcher: () => Promise<AodpPriceRow[]>,
+  options: { fresh?: boolean; now?: number } = {},
+): Promise<CacheResult> {
+  return getOrFetch("flips", fetcher, options);
+}
+
+/** Separate cache for Caerleon + BM craft price payloads. */
+export async function getOrFetchCraftPrices(
+  fetcher: () => Promise<AodpPriceRow[]>,
+  options: { fresh?: boolean; now?: number } = {},
+): Promise<CacheResult> {
+  return getOrFetch("craft", fetcher, options);
+}
+
 /** Test helper — reset store between unit checks. */
 export function __resetCacheForTests(): void {
   globalThis.__flipperPriceCache = { entry: null, inflight: null };
+  globalThis.__flipperCraftPriceCache = { entry: null, inflight: null };
 }

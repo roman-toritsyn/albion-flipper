@@ -1,3 +1,4 @@
+import { AppNav } from "@/components/AppNav";
 import { Providers } from "@/components/Providers";
 import type { Metadata } from "next";
 import { IBM_Plex_Mono, Manrope, Syne } from "next/font/google";
@@ -40,7 +41,10 @@ export default function RootLayout({
       <body className="h-dvh overflow-hidden font-[family-name:var(--font-body)]">
         <div className="app-bg" aria-hidden />
         <div className="app-scroll">
-          <Providers>{children}</Providers>
+          <Providers>
+            <AppNav />
+            {children}
+          </Providers>
         </div>
       </body>
     </html>

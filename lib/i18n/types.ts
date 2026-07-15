@@ -104,6 +104,24 @@ export type MessageKey =
   | "qGood"
   | "qOutstanding"
   | "qExcellent"
-  | "qMasterpiece";
+  | "qMasterpiece"
+  | "navBmFlips"
+  | "navCraftFlips"
+  | "craftFamily"
+  | "craftFamilyAll"
+  | "craftFamilyCapes"
+  | "craftFamilyRoyal"
+  | "craftBuyMode"
+  | "craftBuyRoyal"
+  | "craftBuyCaerleon"
+  | "craftBuyRoyalHint"
+  | "craftBuyCaerleonHint"
+  | "craftBuyCityHint"
+  | "craftCost"
+  | "craftBmSell"
+  | "craftIngredients"
+  | "craftNoDeals"
+  | "craftBuyIn"
+  | "craftYouGet";
 
 export type Messages = Record<MessageKey, string>;

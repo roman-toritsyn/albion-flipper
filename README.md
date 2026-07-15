@@ -1,17 +1,26 @@
 # Albion Flipper
 
-Вебдодаток для пошуку вигідних фліпів у [Albion Online](https://albiononline.com) (сервер Europe): купуєш спорядження в королівських містах або Caerleon і продаєш на **Black Market**.
+Вебдодаток для пошуку вигідних фліпів у [Albion Online](https://albiononline.com) (сервер Europe).
 
-Дані цін беруться з [Albion Online Data Project (AODP)](https://www.albion-online-data.com/). Додаток показує угоди з урахуванням податку (4% premium / 8%), якості (Q1–Q5), свіжості даних і мінімального прибутку.
+Дані цін — [Albion Online Data Project (AODP)](https://www.albion-online-data.com/).
 
 ## Що вміє
 
-- Список фліпів місто → Black Market для BM gear **4.3–8.4**
+### BM Flips (`/`)
+- Фліпи місто → Black Market для BM gear **4.3–8.4**
 - Сортування: найвигідніші / найсвіжіші
 - Фільтри: місто, якість, податок, вік даних, поріг прибутку
+
+### Craft → BM (`/craft`)
+- Купуєш готові інгредієнти на ринку (найдешевше місто), крафтиш **плащі** (crested/FW) або **royal**, продаєш на Black Market
+- Без барів/тканини/рун/focus — лише market-combine рецепти
+- Breakdown інгредієнтів з містом покупки
+- Окреме збереження фільтрів у `localStorage`
+
+### Загальне
 - Збереження фільтрів і мови в `localStorage`
-- Локалізація UI (українська + мови з dump Albion); для української назви предметів лишаються англійськими
-- Кеш цін на сервері (~90 с), щоб не спамити AODP
+- Локалізація UI; для української назви предметів англійські
+- Серверний кеш цін (~90 с)
 
 ## Технології
 
@@ -22,13 +31,11 @@
 | Мова | [TypeScript](https://www.typescriptlang.org/) |
 | Стилі | [Tailwind CSS](https://tailwindcss.com/) 4 |
 | Дані | [AODP Prices API](https://www.albion-online-data.com/) (Europe) |
-| Назви предметів | [ao-bin-dumps](https://github.com/ao-data/ao-bin-dumps) |
-
-Інших runtime-залежностей майже немає — лише Next і React.
+| Назви / рецепти | [ao-bin-dumps](https://github.com/ao-data/ao-bin-dumps) |
 
 ## Вимоги
 
-- **Node.js ≥ 20.9** (див. `.nvmrc` / `engines` у `package.json`)
+- **Node.js ≥ 20.9**
 
 ## Запуск
 
@@ -37,9 +44,7 @@ npm install
 npm run dev
 ```
 
-Dev-сервер слухає [http://127.0.0.1:3000](http://127.0.0.1:3000).
-
-Продакшн:
+Dev: [http://127.0.0.1:3000](http://127.0.0.1:3000) · Craft: [http://127.0.0.1:3000/craft](http://127.0.0.1:3000/craft)
 
 ```bash
 npm run build
@@ -50,11 +55,15 @@ npm start
 
 | Команда | Призначення |
 |---------|-------------|
-| `npm run build:item-names` | Оновити багатомовні назви предметів з ao-bin-dumps |
-| `npm run smoke:calc` | Перевірка формул профіту |
-| `npm run smoke:aodp` | Смоук-запит до AODP |
-| `npm run smoke:flips` | Смоук збору flips |
-| `npm run smoke:cache` | Перевірка кешу |
+| `npm run build:item-names` | Оновити багатомовні назви (items + craft) |
+| `npm run build:craft-recipes` | Оновити craft-рецепти з items.xml |
+| `npm run smoke:calc` | Формули профіту |
+| `npm run smoke:craft-recipes` | Перевірка craft-recipes.json |
+| `npm run smoke:craft-flips` | Фікстури craftFlips |
+| `npm run smoke:craft-api` | Live AODP + craft flips |
+| `npm run smoke:aodp` | Смоук AODP |
+| `npm run smoke:flips` | Смоук BM flips |
+| `npm run smoke:cache` | Кеш |
 
 ## Ліцензія
 

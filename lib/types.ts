@@ -60,3 +60,35 @@ export type FlipsResponse = {
   expiresAt: number;
   cacheHit: boolean;
 };
+
+/** Craft flip (city ingredients → BM). Tax applied client-side. */
+export type CraftFlipDto = {
+  outputId: string;
+  family: "cape" | "royal";
+  quality: number;
+  enchant: number;
+  cost: number;
+  bmBuy: number;
+  bmBuyDate: string;
+  ingredients: Array<{
+    itemId: string;
+    count: number;
+    unitPrice: number;
+    lineTotal: number;
+    date: string;
+    city: string;
+  }>;
+  alternativeIndex: number;
+  buyMode: "royal" | CityLocation;
+};
+
+export type CraftFlipsByModeDto = {
+  [K in "royal" | CityLocation]: CraftFlipDto[];
+};
+
+export type CraftFlipsResponse = {
+  flipsByMode: CraftFlipsByModeDto;
+  fetchedAt: number;
+  expiresAt: number;
+  cacheHit: boolean;
+};

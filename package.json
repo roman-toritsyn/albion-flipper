@@ -14,7 +14,11 @@
     "smoke:cache": "tsx scripts/smoke-cache.ts",
     "smoke:aodp": "tsx scripts/smoke-aodp.ts",
     "smoke:flips": "tsx scripts/smoke-flips.ts",
-    "build:item-names": "tsx scripts/build-item-names.ts"
+    "smoke:craft-recipes": "tsx scripts/smoke-craft-recipes.ts",
+    "smoke:craft-flips": "tsx scripts/smoke-craft-flips.ts",
+    "smoke:craft-api": "tsx scripts/smoke-craft-api.ts",
+    "build:item-names": "tsx scripts/build-item-names.ts",
+    "build:craft-recipes": "tsx scripts/build-craft-recipes.ts"
   },
   "dependencies": {
     "next": "16.2.10",

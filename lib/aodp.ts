@@ -2,7 +2,9 @@ import type { AodpPriceRow } from "./types";
 import { BLACK_MARKET, CITY_LOCATIONS } from "./types";
 
 const AODP_HOST = "https://europe.albion-online-data.com";
-const LOCATIONS = [...CITY_LOCATIONS, BLACK_MARKET].join(",");
+const FLIP_LOCATIONS = [...CITY_LOCATIONS, BLACK_MARKET].join(",");
+/** Craft needs ingredient sell prices in cities + BM buy on output. */
+const CRAFT_LOCATIONS = [...CITY_LOCATIONS, BLACK_MARKET].join(",");
 /** All Albion qualities: Normal → Masterpiece */
 const QUALITIES = "1,2,3,4,5";
 const BATCH_SIZE = 60;
@@ -10,13 +12,17 @@ const BATCH_SIZE = 60;
 const MAX_CONCURRENCY = 3;
 const MAX_URL_LENGTH = 4000;
 
-export function chunkItemIds(itemIds: string[], batchSize = BATCH_SIZE): string[][] {
+export function chunkItemIds(
+  itemIds: string[],
+  batchSize = BATCH_SIZE,
+  locations: string = FLIP_LOCATIONS,
+): string[][] {
   const chunks: string[][] = [];
   let current: string[] = [];
 
   for (const id of itemIds) {
     const trial = current.length === 0 ? [id] : [...current, id];
-    const url = buildPricesUrl(trial);
+    const url = buildPricesUrl(trial, locations);
     if (url.length > MAX_URL_LENGTH && current.length > 0) {
       chunks.push(current);
       current = [id];
@@ -32,13 +38,19 @@ export function chunkItemIds(itemIds: string[], batchSize = BATCH_SIZE): string[
   return chunks;
 }
 
-export function buildPricesUrl(itemIds: string[]): string {
+export function buildPricesUrl(
+  itemIds: string[],
+  locations: string = FLIP_LOCATIONS,
+): string {
   const ids = itemIds.join(",");
-  return `${AODP_HOST}/api/v2/stats/prices/${ids}.json?locations=${encodeURIComponent(LOCATIONS)}&qualities=${QUALITIES}`;
+  return `${AODP_HOST}/api/v2/stats/prices/${ids}.json?locations=${encodeURIComponent(locations)}&qualities=${QUALITIES}`;
 }
 
-async function fetchBatch(itemIds: string[]): Promise<AodpPriceRow[]> {
-  const url = buildPricesUrl(itemIds);
+async function fetchBatch(
+  itemIds: string[],
+  locations: string,
+): Promise<AodpPriceRow[]> {
+  const url = buildPricesUrl(itemIds, locations);
   if (url.length > 4096) {
     throw new Error(`AODP URL too long (${url.length}): reduce batch size`);
   }
@@ -74,25 +86,41 @@ async function mapPool<T, R>(
     }
   }
 
-  const runners = Array.from({ length: Math.min(concurrency, items.length) }, () => run());
+  const runners = Array.from(
+    { length: Math.min(concurrency, items.length) },
+    () => run(),
+  );
   await Promise.all(runners);
   return results;
 }
 
-/** Fetch Europe market prices for the given item IDs (batched). */
-export async function fetchEuropePrices(itemIds: string[]): Promise<AodpPriceRow[]> {
+async function fetchPrices(
+  itemIds: string[],
+  locations: string,
+  label: string,
+): Promise<AodpPriceRow[]> {
   if (itemIds.length === 0) return [];
 
-  const batches = chunkItemIds(itemIds);
+  const batches = chunkItemIds(itemIds, BATCH_SIZE, locations);
   const started = Date.now();
 
   const batchResults = await mapPool(batches, MAX_CONCURRENCY, async (batch) => {
-    return fetchBatch(batch);
+    return fetchBatch(batch, locations);
   });
 
   const rows = batchResults.flat();
   console.info(
-    `[aodp] batches=${batches.length} items=${itemIds.length} rows=${rows.length} ms=${Date.now() - started}`,
+    `[aodp:${label}] batches=${batches.length} items=${itemIds.length} rows=${rows.length} ms=${Date.now() - started}`,
   );
   return rows;
+}
+
+/** Fetch Europe market prices for BM flips (all cities + Black Market). */
+export async function fetchEuropePrices(itemIds: string[]): Promise<AodpPriceRow[]> {
+  return fetchPrices(itemIds, FLIP_LOCATIONS, "flips");
+}
+
+/** Fetch Caerleon + Black Market prices for craft flips. */
+export async function fetchCraftPrices(itemIds: string[]): Promise<AodpPriceRow[]> {
+  return fetchPrices(itemIds, CRAFT_LOCATIONS, "craft");
 }
