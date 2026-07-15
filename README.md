@@ -1,36 +1,61 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Albion Flipper
 
-## Getting Started
+Вебдодаток для пошуку вигідних фліпів у [Albion Online](https://albiononline.com) (сервер Europe): купуєш спорядження в королівських містах або Caerleon і продаєш на **Black Market**.
 
-First, run the development server:
+Дані цін беруться з [Albion Online Data Project (AODP)](https://www.albion-online-data.com/). Додаток показує угоди з урахуванням податку (4% premium / 8%), якості (Q1–Q5), свіжості даних і мінімального прибутку.
+
+## Що вміє
+
+- Список фліпів місто → Black Market для BM gear **4.3–8.4**
+- Сортування: найвигідніші / найсвіжіші
+- Фільтри: місто, якість, податок, вік даних, поріг прибутку
+- Збереження фільтрів і мови в `localStorage`
+- Локалізація UI (українська + мови з dump Albion); для української назви предметів лишаються англійськими
+- Кеш цін на сервері (~90 с), щоб не спамити AODP
+
+## Технології
+
+| | |
+|---|---|
+| Framework | [Next.js](https://nextjs.org/) 16 (App Router) |
+| UI | [React](https://react.dev/) 19 |
+| Мова | [TypeScript](https://www.typescriptlang.org/) |
+| Стилі | [Tailwind CSS](https://tailwindcss.com/) 4 |
+| Дані | [AODP Prices API](https://www.albion-online-data.com/) (Europe) |
+| Назви предметів | [ao-bin-dumps](https://github.com/ao-data/ao-bin-dumps) |
+
+Інших runtime-залежностей майже немає — лише Next і React.
+
+## Вимоги
+
+- **Node.js ≥ 20.9** (див. `.nvmrc` / `engines` у `package.json`)
+
+## Запуск
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Dev-сервер слухає [http://127.0.0.1:3000](http://127.0.0.1:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Продакшн:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npm start
+```
 
-## Learn More
+## Корисні скрипти
 
-To learn more about Next.js, take a look at the following resources:
+| Команда | Призначення |
+|---------|-------------|
+| `npm run build:item-names` | Оновити багатомовні назви предметів з ao-bin-dumps |
+| `npm run smoke:calc` | Перевірка формул профіту |
+| `npm run smoke:aodp` | Смоук-запит до AODP |
+| `npm run smoke:flips` | Смоук збору flips |
+| `npm run smoke:cache` | Перевірка кешу |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Ліцензія
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Private — особистий / навчальний проєкт.
