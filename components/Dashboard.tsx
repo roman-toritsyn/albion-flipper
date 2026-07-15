@@ -4,13 +4,13 @@ import { FlipRow, type FlipRowView } from "@/components/FlipRow";
 import type { CityPriceQuote } from "@/components/CityPricesDropdown";
 import { LanguageSelect } from "@/components/LanguageSelect";
 import { ProfitThresholds } from "@/components/ProfitThresholds";
-import { SecondaryFilters, type CityFilter, type QualityFilter } from "@/components/SecondaryFilters";
-import { SortTabs, type SortTab } from "@/components/SortTabs";
+import { SecondaryFilters, type CityFilter } from "@/components/SecondaryFilters";
+import { SortTabs } from "@/components/SortTabs";
+import { useFilterPrefs } from "@/hooks/useFilterPrefs";
 import { ageMinutes, isFresh, netAfterTax, profit, roi } from "@/lib/calc";
 import { FRESH_COOLDOWN_MS } from "@/lib/constants";
 import { useLocale } from "@/lib/i18n";
 import { qualityKey } from "@/lib/quality";
-import { DEFAULT_PROFIT_THRESHOLD } from "@/lib/thresholds";
 import { ROYAL_CITIES, type FlipOpportunity, type FlipsResponse } from "@/lib/types";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -60,19 +60,26 @@ function passesCityFilter(city: string, filter: CityFilter): boolean {
 
 export function Dashboard() {
   const { t, htmlLang } = useLocale();
+  const {
+    threshold,
+    taxRate,
+    maxAge,
+    cityFilter,
+    qualityFilter,
+    sortTab,
+    setThreshold,
+    setTaxRate,
+    setMaxAge,
+    setCityFilter,
+    setQualityFilter,
+    setSortTab,
+  } = useFilterPrefs();
   const [raw, setRaw] = useState<FlipOpportunity[]>([]);
   const [fetchedAt, setFetchedAt] = useState<number | null>(null);
   const [cacheHit, setCacheHit] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [threshold, setThreshold] = useState(DEFAULT_PROFIT_THRESHOLD);
-  const [taxRate, setTaxRate] = useState(0.04);
-  /** AODP is crowd-sourced; 6h balances freshness vs coverage. */
-  const [maxAge, setMaxAge] = useState(6 * 60);
-  const [cityFilter, setCityFilter] = useState<CityFilter>("all");
-  const [qualityFilter, setQualityFilter] = useState<QualityFilter>("all");
-  const [sortTab, setSortTab] = useState<SortTab>("profit");
   const [cooldownLeft, setCooldownLeft] = useState(0);
   const [now, setNow] = useState(() => Date.now());
 
