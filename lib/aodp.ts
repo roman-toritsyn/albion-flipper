@@ -1,5 +1,5 @@
 import type { AodpPriceRow } from "./types";
-import { BLACK_MARKET, CITY_LOCATIONS } from "./types";
+import { BLACK_MARKET, CITY_LOCATIONS, REFINE_CITIES } from "./types";
 
 const AODP_HOST = "https://europe.albion-online-data.com";
 const FLIP_LOCATIONS = [...CITY_LOCATIONS, BLACK_MARKET].join(",");
@@ -120,7 +120,12 @@ export async function fetchEuropePrices(itemIds: string[]): Promise<AodpPriceRow
   return fetchPrices(itemIds, FLIP_LOCATIONS, "flips");
 }
 
-/** Fetch Caerleon + Black Market prices for craft flips. */
+/** Fetch city + BM prices for craft flips. */
 export async function fetchCraftPrices(itemIds: string[]): Promise<AodpPriceRow[]> {
   return fetchPrices(itemIds, CRAFT_LOCATIONS, "craft");
+}
+
+/** Fetch city market prices for refine (no BM needed). */
+export async function fetchRefinePrices(itemIds: string[]): Promise<AodpPriceRow[]> {
+  return fetchPrices(itemIds, REFINE_CITIES.join(","), "refine");
 }

@@ -1,6 +1,6 @@
 /**
  * Rebuild data/item-names.json from ao-bin-dumps LocalizedNames
- * for ids in data/items.json + data/craft-recipes.json.
+ * for ids in data/items.json + craft-recipes + refine-recipes.
  *
  * Usage: npx tsx scripts/build-item-names.ts
  */
@@ -16,15 +16,15 @@ type DumpEntry = {
   LocalizedNames?: Record<string, string>;
 };
 
-type CraftRecipe = {
+type RecipeFile = {
   outputId: string;
   alternatives: Array<{ ingredients: Array<{ itemId: string }> }>;
 };
 
-function craftIds(): string[] {
-  const path = join(process.cwd(), "data", "craft-recipes.json");
+function recipeIds(filename: string): string[] {
+  const path = join(process.cwd(), "data", filename);
   if (!existsSync(path)) return [];
-  const recipes = JSON.parse(readFileSync(path, "utf8")) as CraftRecipe[];
+  const recipes = JSON.parse(readFileSync(path, "utf8")) as RecipeFile[];
   const ids = new Set<string>();
   for (const r of recipes) {
     ids.add(r.outputId);
@@ -41,7 +41,11 @@ function baseId(id: string): string {
 }
 
 async function main() {
-  const needed = new Set<string>([...(items as string[]), ...craftIds()]);
+  const needed = new Set<string>([
+    ...(items as string[]),
+    ...recipeIds("craft-recipes.json"),
+    ...recipeIds("refine-recipes.json"),
+  ]);
   console.log("needed", needed.size);
 
   const res = await fetch(DUMP_URL);

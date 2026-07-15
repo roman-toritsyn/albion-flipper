@@ -10,9 +10,13 @@ import { useFilterPrefs } from "@/hooks/useFilterPrefs";
 import { ageMinutes, isFresh, netAfterTax, profit, roi } from "@/lib/calc";
 import { FRESH_COOLDOWN_MS } from "@/lib/constants";
 import { useLocale } from "@/lib/i18n";
+import type { LoadError } from "@/lib/loadError";
+import { parseLoadError } from "@/lib/loadError";
 import { qualityKey } from "@/lib/quality";
 import { ROYAL_CITIES, type FlipOpportunity, type FlipsResponse } from "@/lib/types";
+import type { ApiErrorBody } from "@/lib/apiErrors";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { LoadErrorBanner } from "@/components/LoadErrorBanner";
 
 function flipAgeMinutes(flip: FlipRowView, now: number): number {
   return Math.max(
@@ -79,7 +83,7 @@ export function Dashboard() {
   const [cacheHit, setCacheHit] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<LoadError | null>(null);
   const [cooldownLeft, setCooldownLeft] = useState(0);
   const [now, setNow] = useState(() => Date.now());
 
@@ -91,8 +95,8 @@ export function Dashboard() {
     try {
       const url = fresh ? "/api/flips?fresh=1" : "/api/flips";
       const res = await fetch(url, { cache: "no-store" });
-      const data = (await res.json()) as FlipsResponse & { error?: string };
-      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      const data = (await res.json()) as FlipsResponse & ApiErrorBody;
+      if (!res.ok) throw parseLoadError(res, data);
 
       setRaw(data.flips);
       setFetchedAt(data.fetchedAt);
@@ -102,7 +106,14 @@ export function Dashboard() {
         setCooldownLeft(Math.ceil(FRESH_COOLDOWN_MS / 1000));
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "load error");
+      if (e && typeof e === "object" && "code" in e && "message" in e) {
+        setError(e as LoadError);
+      } else {
+        setError({
+          code: "UNKNOWN",
+          message: e instanceof Error ? e.message : "load error",
+        });
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -309,9 +320,7 @@ export function Dashboard() {
         )}
 
         {!showLoader && error && (
-          <p className="py-16 text-center text-danger">
-            {t("loadFailed", { error })}
-          </p>
+          <LoadErrorBanner error={error} onRetry={() => void load(true)} />
         )}
 
         {!showLoader && !error && visible.length === 0 && (

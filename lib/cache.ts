@@ -28,14 +28,22 @@ declare global {
   var __flipperPriceCache: MemoryStore | undefined;
   // eslint-disable-next-line no-var
   var __flipperCraftPriceCache: MemoryStore | undefined;
+  // eslint-disable-next-line no-var
+  var __flipperRefinePriceCache: MemoryStore | undefined;
 }
 
-function storeFor(kind: "flips" | "craft"): MemoryStore {
+function storeFor(kind: "flips" | "craft" | "refine"): MemoryStore {
   if (kind === "craft") {
     if (!globalThis.__flipperCraftPriceCache) {
       globalThis.__flipperCraftPriceCache = { entry: null, inflight: null };
     }
     return globalThis.__flipperCraftPriceCache;
+  }
+  if (kind === "refine") {
+    if (!globalThis.__flipperRefinePriceCache) {
+      globalThis.__flipperRefinePriceCache = { entry: null, inflight: null };
+    }
+    return globalThis.__flipperRefinePriceCache;
   }
   if (!globalThis.__flipperPriceCache) {
     globalThis.__flipperPriceCache = { entry: null, inflight: null };
@@ -53,6 +61,10 @@ export function invalidate(): void {
 
 export function invalidateCraft(): void {
   storeFor("craft").entry = null;
+}
+
+export function invalidateRefine(): void {
+  storeFor("refine").entry = null;
 }
 
 export function getCacheMeta(now: number = Date.now()): {
@@ -74,7 +86,7 @@ export function getCacheMeta(now: number = Date.now()): {
 }
 
 async function getOrFetch(
-  kind: "flips" | "craft",
+  kind: "flips" | "craft" | "refine",
   fetcher: () => Promise<AodpPriceRow[]>,
   options: { fresh?: boolean; now?: number } = {},
 ): Promise<CacheResult> {
@@ -150,8 +162,17 @@ export async function getOrFetchCraftPrices(
   return getOrFetch("craft", fetcher, options);
 }
 
+/** Separate cache for refine (raw + refined) city market prices. */
+export async function getOrFetchRefinePrices(
+  fetcher: () => Promise<AodpPriceRow[]>,
+  options: { fresh?: boolean; now?: number } = {},
+): Promise<CacheResult> {
+  return getOrFetch("refine", fetcher, options);
+}
+
 /** Test helper — reset store between unit checks. */
 export function __resetCacheForTests(): void {
   globalThis.__flipperPriceCache = { entry: null, inflight: null };
   globalThis.__flipperCraftPriceCache = { entry: null, inflight: null };
+  globalThis.__flipperRefinePriceCache = { entry: null, inflight: null };
 }

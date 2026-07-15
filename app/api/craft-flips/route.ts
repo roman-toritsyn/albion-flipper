@@ -1,4 +1,5 @@
 import { fetchCraftPrices } from "@/lib/aodp";
+import { upstreamErrorResponse } from "@/lib/apiErrors";
 import { getOrFetchCraftPrices } from "@/lib/cache";
 import { buildCraftFlipsByMode, craftPriceItemIds } from "@/lib/craftFlips";
 import type { CraftFlipsResponse } from "@/lib/types";
@@ -32,6 +33,6 @@ export async function GET(req: NextRequest) {
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     console.error("[api/craft-flips]", message);
-    return NextResponse.json({ error: message }, { status: 502 });
+    return upstreamErrorResponse(err);
   }
 }

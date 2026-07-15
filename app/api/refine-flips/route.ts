@@ -1,25 +1,25 @@
-import { fetchEuropePrices } from "@/lib/aodp";
+import { fetchRefinePrices } from "@/lib/aodp";
 import { upstreamErrorResponse } from "@/lib/apiErrors";
-import { getOrFetchPrices } from "@/lib/cache";
-import { buildFlips } from "@/lib/flips";
-import { ITEM_IDS } from "@/lib/items";
-import type { FlipsResponse } from "@/lib/types";
+import { getOrFetchRefinePrices } from "@/lib/cache";
+import { refinePriceItemIds } from "@/lib/refineFlips";
+import type { RefineFlipsResponse } from "@/lib/types";
 import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
+
+const REFINE_ITEM_IDS = refinePriceItemIds();
 
 export async function GET(req: NextRequest) {
   const fresh = req.nextUrl.searchParams.get("fresh") === "1";
 
   try {
-    const result = await getOrFetchPrices(() => fetchEuropePrices(ITEM_IDS), {
-      fresh,
-    });
+    const result = await getOrFetchRefinePrices(
+      () => fetchRefinePrices(REFINE_ITEM_IDS),
+      { fresh },
+    );
 
-    const flips = buildFlips(result.data);
-
-    const body: FlipsResponse = {
-      flips,
+    const body: RefineFlipsResponse = {
+      rows: result.data,
       fetchedAt: result.fetchedAt,
       expiresAt: result.expiresAt,
       cacheHit: result.cacheHit,
@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
-    console.error("[api/flips]", message);
+    console.error("[api/refine-flips]", message);
     return upstreamErrorResponse(err);
   }
 }

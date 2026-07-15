@@ -20,6 +20,17 @@ export const ROYAL_CITIES = [
 
 export type RoyalCity = (typeof ROYAL_CITIES)[number];
 
+/**
+ * Cities used for refine buy/sell/refine city picks.
+ * Royal 5 + Brecilien (same base RRR as royal without specialty). No Caerleon.
+ */
+export const REFINE_CITIES = [
+  ...ROYAL_CITIES,
+  "Brecilien",
+] as const;
+
+export type RefineMarketCity = (typeof REFINE_CITIES)[number];
+
 export const BLACK_MARKET = "Black Market" as const;
 
 export type MarketLocation = CityLocation | typeof BLACK_MARKET;
@@ -88,6 +99,14 @@ export type CraftFlipsByModeDto = {
 
 export type CraftFlipsResponse = {
   flipsByMode: CraftFlipsByModeDto;
+  fetchedAt: number;
+  expiresAt: number;
+  cacheHit: boolean;
+};
+
+/** Raw AODP rows for refine (client rebuilds flips when buy/sell/focus change). */
+export type RefineFlipsResponse = {
+  rows: AodpPriceRow[];
   fetchedAt: number;
   expiresAt: number;
   cacheHit: boolean;

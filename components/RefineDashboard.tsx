@@ -1,59 +1,49 @@
 "use client";
 
-import { CraftRow } from "@/components/CraftRow";
 import { LanguageSelect } from "@/components/LanguageSelect";
 import { LoadErrorBanner } from "@/components/LoadErrorBanner";
-import { ProfitThresholds } from "@/components/ProfitThresholds";
-import { useCraftFilterPrefs } from "@/hooks/useCraftFilterPrefs";
+import { RefineRow } from "@/components/RefineRow";
+import { useRefineFilterPrefs } from "@/hooks/useRefineFilterPrefs";
 import type { ApiErrorBody } from "@/lib/apiErrors";
 import { isFresh } from "@/lib/calc";
 import { FRESH_COOLDOWN_MS } from "@/lib/constants";
-import type { CraftFamilyFilter } from "@/lib/craftFilterPrefs";
+import type { RefineFamilyFilter } from "@/lib/refineFilterPrefs";
 import {
-  CRAFT_BUY_MODES,
-  craftProfit,
-  type CraftBuyMode,
-  type CraftFlipOpportunity,
-  type CraftFlipsByMode,
-} from "@/lib/craftFlips";
+  buildRefineFlips,
+  refineProfit,
+  type DailyProductionBonus,
+  type MarketSide,
+  type RefineOpportunity,
+} from "@/lib/refineFlips";
 import { useLocale } from "@/lib/i18n";
 import type { LoadError } from "@/lib/loadError";
 import { parseLoadError } from "@/lib/loadError";
-import { QUALITIES, QUALITY_SHORT, type ItemQuality } from "@/lib/quality";
-import type { CraftFlipsResponse } from "@/lib/types";
-import { CITY_LOCATIONS } from "@/lib/types";
+import type { AodpPriceRow, RefineFlipsResponse } from "@/lib/types";
+import { REFINE_CITIES } from "@/lib/types";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-const EMPTY_BY_MODE = Object.fromEntries(
-  CRAFT_BUY_MODES.map((m) => [m, [] as CraftFlipOpportunity[]]),
-) as CraftFlipsByMode;
-
-function buyModeLabel(
-  mode: CraftBuyMode,
-  t: (key: "craftBuyRoyal") => string,
-): string {
-  if (mode === "royal") return t("craftBuyRoyal");
-  return mode;
-}
-
-export function CraftDashboard() {
-  const { t, htmlLang } = useLocale();
+export function RefineDashboard() {
+  const { t } = useLocale();
   const {
-    threshold,
     taxRate,
     maxAge,
-    qualityFilter,
     familyFilter,
-    buyMode,
-    setThreshold,
+    buySide,
+    sellSide,
+    useFocus,
+    dailyBonus,
+    refineCity,
     setTaxRate,
     setMaxAge,
-    setQualityFilter,
     setFamilyFilter,
-    setBuyMode,
-  } = useCraftFilterPrefs();
+    setBuySide,
+    setSellSide,
+    setUseFocus,
+    setDailyBonus,
+    setRefineCity,
+  } = useRefineFilterPrefs();
 
-  const [flipsByMode, setFlipsByMode] = useState<CraftFlipsByMode>(EMPTY_BY_MODE);
+  const [rows, setRows] = useState<AodpPriceRow[]>([]);
   const [fetchedAt, setFetchedAt] = useState<number | null>(null);
   const [cacheHit, setCacheHit] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
@@ -67,11 +57,11 @@ export function CraftDashboard() {
     else setLoading(true);
     setError(null);
     try {
-      const url = fresh ? "/api/craft-flips?fresh=1" : "/api/craft-flips";
+      const url = fresh ? "/api/refine-flips?fresh=1" : "/api/refine-flips";
       const res = await fetch(url, { cache: "no-store" });
-      const data = (await res.json()) as CraftFlipsResponse & ApiErrorBody;
+      const data = (await res.json()) as RefineFlipsResponse & ApiErrorBody;
       if (!res.ok) throw parseLoadError(res, data);
-      setFlipsByMode(data.flipsByMode);
+      setRows(data.rows);
       setFetchedAt(data.fetchedAt);
       setCacheHit(data.cacheHit);
       setNow(Date.now());
@@ -108,25 +98,36 @@ export function CraftDashboard() {
     return () => clearInterval(id);
   }, []);
 
-  const raw = flipsByMode[buyMode] ?? [];
+  const flips: RefineOpportunity[] = useMemo(() => {
+    return buildRefineFlips(rows, undefined, {
+      buySide,
+      sellSide,
+      useFocus,
+      dailyBonus,
+      refineCity,
+      maxAgeMinutes: maxAge,
+      nowMs: now,
+    });
+  }, [rows, buySide, sellSide, useFocus, dailyBonus, refineCity, maxAge, now]);
 
   const visible = useMemo(() => {
-    return raw
+    return flips
       .filter((f) => {
         if (familyFilter !== "all" && f.family !== familyFilter) return false;
-        if (qualityFilter !== "all" && f.quality !== qualityFilter) return false;
-        if (!isFresh(f.bmBuyDate, maxAge, now)) return false;
+        if (!isFresh(f.revenueDate, maxAge, now)) return false;
         if (f.ingredients.some((ing) => !isFresh(ing.date, maxAge, now))) return false;
-        const p = craftProfit(f.bmBuy, f.cost, taxRate);
-        return p >= threshold;
+        // Hide dead routes — refine list is for opportunities, not dump-loss noise.
+        const p = refineProfit(f.revenue, f.effectiveCost, taxRate);
+        if (p < 0) return false;
+        return true;
       })
       .sort((a, b) => {
-        const pa = craftProfit(a.bmBuy, a.cost, taxRate);
-        const pb = craftProfit(b.bmBuy, b.cost, taxRate);
+        const pa = refineProfit(a.revenue, a.effectiveCost, taxRate);
+        const pb = refineProfit(b.revenue, b.effectiveCost, taxRate);
         if (pb !== pa) return pb - pa;
-        return b.quality - a.quality;
+        return b.tier - a.tier;
       });
-  }, [raw, familyFilter, qualityFilter, maxAge, taxRate, threshold, now]);
+  }, [flips, familyFilter, maxAge, taxRate, now]);
 
   const showLoader = loading || refreshing;
   const refreshDisabled = refreshing || cooldownLeft > 0;
@@ -153,12 +154,18 @@ export function CraftDashboard() {
                 ? t("age48h")
                 : t("ageHours", { n: maxAge / 60 });
 
-  const buyChips: CraftBuyMode[] = ["royal", ...CITY_LOCATIONS];
-
-  const families: { id: CraftFamilyFilter; label: string }[] = [
+  const families: { id: RefineFamilyFilter; label: string }[] = [
     { id: "all", label: t("craftFamilyAll") },
-    { id: "cape", label: t("craftFamilyCapes") },
-    { id: "royal", label: t("craftFamilyRoyal") },
+    { id: "bars", label: t("refineFamilyBars") },
+    { id: "planks", label: t("refineFamilyPlanks") },
+    { id: "cloth", label: t("refineFamilyCloth") },
+    { id: "leather", label: t("refineFamilyLeather") },
+    { id: "stone", label: t("refineFamilyStone") },
+  ];
+
+  const sides: { id: MarketSide; label: string }[] = [
+    { id: "instant", label: t("marketInstant") },
+    { id: "order", label: t("marketOrder") },
   ];
 
   return (
@@ -169,10 +176,10 @@ export function CraftDashboard() {
             Europe
           </p>
           <h1 className="mt-1 font-[family-name:var(--font-display)] text-4xl font-semibold tracking-tight text-text sm:text-5xl">
-            CRAFT
+            REFINE
           </h1>
           <p className="mt-1 font-[family-name:var(--font-display)] text-lg text-text-dim">
-            → BLACK MARKET
+            {t("refineSubtitle")}
           </p>
         </div>
         <div className="flex flex-col items-start gap-2 sm:items-end">
@@ -203,80 +210,128 @@ export function CraftDashboard() {
         </div>
       </header>
 
-      <div className="w-full">
-        <p className="mb-2 font-[family-name:var(--font-display)] text-[11px] uppercase tracking-[0.18em] text-muted">
-          {t("craftBuyMode")}
-        </p>
-        <div className="flex flex-wrap gap-1.5">
-          {buyChips.map((mode) => {
-            const active = mode === buyMode;
-            return (
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <p className="mb-2 font-[family-name:var(--font-display)] text-[11px] uppercase tracking-[0.18em] text-muted">
+            {t("refineBuySide")}
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {sides.map((s) => (
               <button
-                key={mode}
+                key={`buy-${s.id}`}
                 type="button"
-                title={
-                  mode === "royal" ? t("craftBuyRoyalHint") : t("craftBuyCityHint")
-                }
-                onClick={() => setBuyMode(mode)}
+                onClick={() => setBuySide(s.id)}
                 className={`rounded-md border px-3 py-1.5 text-xs transition-colors ${
-                  active
+                  buySide === s.id
                     ? "border-brass bg-brass text-[#1a1405]"
                     : "border-border bg-surface text-text-dim hover:text-text"
                 }`}
               >
-                {buyModeLabel(mode, t)}
+                {s.label}
               </button>
-            );
-          })}
+            ))}
+          </div>
         </div>
-      </div>
-
-      <ProfitThresholds value={threshold} onChange={setThreshold} />
-
-      <div className="w-full">
-        <p className="mb-2 font-[family-name:var(--font-display)] text-[11px] uppercase tracking-[0.18em] text-muted">
-          {t("craftFamily")}
-        </p>
-        <div className="flex flex-wrap gap-1.5">
-          {families.map((f) => {
-            const active = f.id === familyFilter;
-            return (
+        <div>
+          <p className="mb-2 font-[family-name:var(--font-display)] text-[11px] uppercase tracking-[0.18em] text-muted">
+            {t("refineSellSide")}
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {sides.map((s) => (
               <button
-                key={f.id}
+                key={`sell-${s.id}`}
                 type="button"
-                onClick={() => setFamilyFilter(f.id)}
+                onClick={() => setSellSide(s.id)}
                 className={`rounded-md border px-3 py-1.5 text-xs transition-colors ${
-                  active
+                  sellSide === s.id
                     ? "border-brass bg-brass text-[#1a1405]"
                     : "border-border bg-surface text-text-dim hover:text-text"
                 }`}
               >
-                {f.label}
+                {s.label}
               </button>
-            );
-          })}
+            ))}
+          </div>
         </div>
       </div>
 
-      <section className="flex flex-wrap gap-3 text-sm">
-        <label className="flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-2">
-          <span className="text-muted">{t("quality")}</span>
+      <div className="flex flex-wrap items-end gap-4">
+        <label className="flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm">
+          <input
+            type="checkbox"
+            checked={useFocus}
+            onChange={(e) => setUseFocus(e.target.checked)}
+            className="accent-[var(--brass,#c4a35a)]"
+          />
+          <span>{t("focusOn")}</span>
+        </label>
+        <div>
+          <p className="mb-2 font-[family-name:var(--font-display)] text-[11px] uppercase tracking-[0.18em] text-muted">
+            {t("dailyBonus")}
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {([0, 10, 20] as DailyProductionBonus[]).map((n) => (
+              <button
+                key={n}
+                type="button"
+                onClick={() => setDailyBonus(n)}
+                className={`rounded-md border px-3 py-1.5 text-xs transition-colors ${
+                  dailyBonus === n
+                    ? "border-brass bg-brass text-[#1a1405]"
+                    : "border-border bg-surface text-text-dim hover:text-text"
+                }`}
+              >
+                {n === 0 ? t("dailyBonusOff") : t("dailyBonusPct", { n })}
+              </button>
+            ))}
+          </div>
+        </div>
+        <label className="flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm">
+          <span className="text-muted">{t("refineCity")}</span>
           <select
-            value={qualityFilter === "all" ? "all" : String(qualityFilter)}
-            onChange={(e) => {
-              const v = e.target.value;
-              setQualityFilter(v === "all" ? "all" : (Number(v) as ItemQuality));
-            }}
+            value={refineCity}
+            onChange={(e) =>
+              setRefineCity(
+                e.target.value === "auto"
+                  ? "auto"
+                  : (e.target.value as (typeof REFINE_CITIES)[number]),
+              )
+            }
             className="bg-transparent font-[family-name:var(--font-mono)] text-text outline-none"
           >
-            <option value="all">{t("allQualities")}</option>
-            {QUALITIES.map((q) => (
-              <option key={q} value={q}>
-                {QUALITY_SHORT[q]}
+            <option value="auto">{t("refineCityAuto")}</option>
+            {REFINE_CITIES.map((c) => (
+              <option key={c} value={c}>
+                {c}
               </option>
             ))}
           </select>
         </label>
+      </div>
+
+      <div>
+        <p className="mb-2 font-[family-name:var(--font-display)] text-[11px] uppercase tracking-[0.18em] text-muted">
+          {t("craftFamily")}
+        </p>
+        <div className="flex flex-wrap gap-1.5">
+          {families.map((f) => (
+            <button
+              key={f.id}
+              type="button"
+              onClick={() => setFamilyFilter(f.id)}
+              className={`rounded-md border px-3 py-1.5 text-xs transition-colors ${
+                familyFilter === f.id
+                  ? "border-brass bg-brass text-[#1a1405]"
+                  : "border-border bg-surface text-text-dim hover:text-text"
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <section className="flex flex-wrap gap-3 text-sm">
         <label className="flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-2">
           <span className="text-muted">{t("tax")}</span>
           <select
@@ -328,18 +383,15 @@ export function CraftDashboard() {
 
         {!showLoader && !error && visible.length === 0 && (
           <p className="py-16 text-center text-muted">
-            {t("craftNoDeals", {
-              threshold: threshold.toLocaleString(htmlLang),
-              age: ageDisplay,
-            })}
+            {t("refineNoDeals", { age: ageDisplay })}
           </p>
         )}
 
         {!showLoader &&
           !error &&
           visible.map((flip, i) => (
-            <CraftRow
-              key={`${String(flip.buyMode)}-${flip.outputId}-q${flip.quality}-${flip.cost}-${flip.bmBuy}`}
+            <RefineRow
+              key={`${flip.outputId}-${flip.refineCity}-${flip.buySide}-${flip.sellSide}-${flip.effectiveCost}`}
               flip={flip}
               taxRate={taxRate}
               index={i}

@@ -17,8 +17,11 @@
     "smoke:craft-recipes": "tsx scripts/smoke-craft-recipes.ts",
     "smoke:craft-flips": "tsx scripts/smoke-craft-flips.ts",
     "smoke:craft-api": "tsx scripts/smoke-craft-api.ts",
+    "smoke:refine-flips": "tsx scripts/smoke-refine-flips.ts",
     "build:item-names": "tsx scripts/build-item-names.ts",
-    "build:craft-recipes": "tsx scripts/build-craft-recipes.ts"
+    "build:item-weights": "tsx scripts/build-item-weights.ts",
+    "build:craft-recipes": "tsx scripts/build-craft-recipes.ts",
+    "build:refine-recipes": "tsx scripts/build-refine-recipes.ts"
   },
   "dependencies": {
     "next": "16.2.10",
