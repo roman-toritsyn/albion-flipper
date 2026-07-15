@@ -30,9 +30,13 @@ declare global {
   var __flipperCraftPriceCache: MemoryStore | undefined;
   // eslint-disable-next-line no-var
   var __flipperRefinePriceCache: MemoryStore | undefined;
+  // eslint-disable-next-line no-var
+  var __flipperUpgradePriceCache: MemoryStore | undefined;
 }
 
-function storeFor(kind: "flips" | "craft" | "refine"): MemoryStore {
+function storeFor(
+  kind: "flips" | "craft" | "refine" | "upgrade",
+): MemoryStore {
   if (kind === "craft") {
     if (!globalThis.__flipperCraftPriceCache) {
       globalThis.__flipperCraftPriceCache = { entry: null, inflight: null };
@@ -44,6 +48,12 @@ function storeFor(kind: "flips" | "craft" | "refine"): MemoryStore {
       globalThis.__flipperRefinePriceCache = { entry: null, inflight: null };
     }
     return globalThis.__flipperRefinePriceCache;
+  }
+  if (kind === "upgrade") {
+    if (!globalThis.__flipperUpgradePriceCache) {
+      globalThis.__flipperUpgradePriceCache = { entry: null, inflight: null };
+    }
+    return globalThis.__flipperUpgradePriceCache;
   }
   if (!globalThis.__flipperPriceCache) {
     globalThis.__flipperPriceCache = { entry: null, inflight: null };
@@ -67,6 +77,10 @@ export function invalidateRefine(): void {
   storeFor("refine").entry = null;
 }
 
+export function invalidateUpgrade(): void {
+  storeFor("upgrade").entry = null;
+}
+
 export function getCacheMeta(now: number = Date.now()): {
   hasEntry: boolean;
   fetchedAt: number | null;
@@ -86,7 +100,7 @@ export function getCacheMeta(now: number = Date.now()): {
 }
 
 async function getOrFetch(
-  kind: "flips" | "craft" | "refine",
+  kind: "flips" | "craft" | "refine" | "upgrade",
   fetcher: () => Promise<AodpPriceRow[]>,
   options: { fresh?: boolean; now?: number } = {},
 ): Promise<CacheResult> {
@@ -170,9 +184,18 @@ export async function getOrFetchRefinePrices(
   return getOrFetch("refine", fetcher, options);
 }
 
+/** Separate cache for upgrade (enchant) city + BM prices. */
+export async function getOrFetchUpgradePrices(
+  fetcher: () => Promise<AodpPriceRow[]>,
+  options: { fresh?: boolean; now?: number } = {},
+): Promise<CacheResult> {
+  return getOrFetch("upgrade", fetcher, options);
+}
+
 /** Test helper — reset store between unit checks. */
 export function __resetCacheForTests(): void {
   globalThis.__flipperPriceCache = { entry: null, inflight: null };
   globalThis.__flipperCraftPriceCache = { entry: null, inflight: null };
   globalThis.__flipperRefinePriceCache = { entry: null, inflight: null };
+  globalThis.__flipperUpgradePriceCache = { entry: null, inflight: null };
 }

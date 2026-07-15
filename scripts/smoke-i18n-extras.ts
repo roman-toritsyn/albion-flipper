@@ -8,6 +8,9 @@ const keys = [
   "dailyBonus",
   "refineManualTitle",
   "navRefine",
+  "navUpgrade",
+  "upgradeCost",
+  "upgradeBuyCityAuto",
   "taxPremium",
   "netAbbrev",
   "refineManualFillMarket",
@@ -23,5 +26,11 @@ if (MESSAGES.ru.refineFamilyLeather === MESSAGES.en.refineFamilyLeather) {
 }
 if (MESSAGES.ru.refineManualFillMarket === MESSAGES.en.refineManualFillMarket) {
   throw new Error("ru fill still English");
+}
+if (MESSAGES.ru.navUpgrade !== "Апгрейд → BM") {
+  throw new Error(`ru navUpgrade: ${MESSAGES.ru.navUpgrade}`);
+}
+if (MESSAGES.de.upgradeCost === MESSAGES.en.upgradeCost) {
+  throw new Error("de upgradeCost still English");
 }
 console.log("smoke-i18n-extras ok");

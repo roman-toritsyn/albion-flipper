@@ -111,3 +111,11 @@ export type RefineFlipsResponse = {
   expiresAt: number;
   cacheHit: boolean;
 };
+
+/** Raw AODP rows for upgrade (client rebuilds when city/path/quality change). */
+export type UpgradeFlipsResponse = {
+  rows: AodpPriceRow[];
+  fetchedAt: number;
+  expiresAt: number;
+  cacheHit: boolean;
+};

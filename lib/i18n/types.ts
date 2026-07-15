@@ -110,6 +110,7 @@ export type MessageKey =
   | "navBmFlips"
   | "navCraftFlips"
   | "navRefine"
+  | "navUpgrade"
   | "craftFamily"
   | "craftFamilyAll"
   | "craftFamilyCapes"
@@ -173,6 +174,24 @@ export type MessageKey =
   | "brandCraftTitle"
   | "brandCraftSubtitle"
   | "brandRefineTitle"
-  | "navAriaMain";
+  | "navAriaMain"
+  | "upgradeSubtitle"
+  | "upgradeBuyCity"
+  | "upgradeBuyCityAuto"
+  | "upgradeBuyCityAutoHint"
+  | "upgradeBuyCityLockedHint"
+  | "upgradePath"
+  | "upgradePathTo"
+  | "upgradeCost"
+  | "upgradeNoDeals"
+  | "upgradeFamilyWeapon"
+  | "upgradeFamilyArmor"
+  | "upgradeFamilyHead"
+  | "upgradeFamilyShoes"
+  | "upgradeFamilyOffhand"
+  | "upgradeFamilyCape"
+  | "upgradeFamilyBag"
+  | "upgradeFamilyGather"
+  | "brandUpgradeTitle";
 
 export type Messages = Record<MessageKey, string>;

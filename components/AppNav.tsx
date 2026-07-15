@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 const TABS = [
   { href: "/", key: "navBmFlips" as const },
   { href: "/craft", key: "navCraftFlips" as const },
+  { href: "/upgrade", key: "navUpgrade" as const },
   { href: "/refine", key: "navRefine" as const },
 ];
 

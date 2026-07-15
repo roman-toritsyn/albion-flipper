@@ -6,6 +6,12 @@ const AODP_HOST = "https://europe.albion-online-data.com";
 const FLIP_LOCATIONS = [...CITY_LOCATIONS, BLACK_MARKET].join(",");
 /** Craft needs ingredient sell prices in cities + BM buy on output. */
 const CRAFT_LOCATIONS = [...CITY_LOCATIONS, BLACK_MARKET].join(",");
+/** Upgrade: royal + Caerleon + Brecilien + BM. */
+const UPGRADE_LOCATIONS = [
+  ...CITY_LOCATIONS,
+  "Brecilien",
+  BLACK_MARKET,
+].join(",");
 /** All Albion qualities: Normal → Masterpiece */
 const QUALITIES = "1,2,3,4,5";
 const BATCH_SIZE = 60;
@@ -135,4 +141,9 @@ export async function fetchRefinePrices(itemIds: string[]): Promise<AodpPriceRow
     ...row,
     item_id: fromAodpMarketId(row.item_id),
   }));
+}
+
+/** Fetch buy cities + BM for upgrade (enchant) flips. */
+export async function fetchUpgradePrices(itemIds: string[]): Promise<AodpPriceRow[]> {
+  return fetchPrices(itemIds, UPGRADE_LOCATIONS, "upgrade");
 }
