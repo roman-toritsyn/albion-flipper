@@ -4,6 +4,7 @@
  */
 import {
   buildRefineFlips,
+  calcManualRefine,
   refineProfit,
   type RefineRecipe,
 } from "../lib/refineFlips";
@@ -64,6 +65,35 @@ assert(
   Math.abs(resourceReturnRate("bars", "Thetford", true, 20) - 0.578) < 5e-4,
   "RRR specialty focus +20 daily",
 );
+
+{
+  const recipe: RefineRecipe = {
+    outputId: "T5_METALBAR",
+    enchant: 0,
+    tier: 5,
+    family: "bars",
+    alternatives: [
+      {
+        ingredients: [
+          { itemId: "T5_ORE", count: 3 },
+          { itemId: "T4_METALBAR", count: 1 },
+        ],
+      },
+    ],
+  };
+  const manual = calcManualRefine({
+    recipe,
+    unitPrices: { T5_ORE: 100, T4_METALBAR: 500 },
+    sellPrice: 1000,
+    useFocus: false,
+    dailyBonus: 0,
+    taxRate: 0.04,
+  });
+  assert(!!manual, "manual result");
+  assert(manual!.grossCost === 800, `manual gross ${manual!.grossCost}`);
+  assert(manual!.complete, "manual complete");
+  assert(manual!.profit === refineProfit(1000, manual!.effectiveCost, 0.04), "manual profit");
+}
 
 const recipe: RefineRecipe = {
   outputId: "T5_METALBAR",
@@ -182,6 +212,75 @@ const rows: AodpPriceRow[] = [
   // Martlock bid 50 is stale → Thetford bid 80
   assert(ore!.city === "Thetford", `city ${ore!.city}`);
   assert(ore!.unitPrice === 80, `price ${ore!.unitPrice}`);
+}
+
+{
+  // AODP lists enchanted resources as UniqueName_LEVELn@n — index must match recipes.
+  const enchRecipe: RefineRecipe = {
+    outputId: "T8_PLANKS_LEVEL2",
+    enchant: 2,
+    tier: 8,
+    family: "planks",
+    alternatives: [
+      {
+        ingredients: [
+          { itemId: "T8_WOOD_LEVEL2", count: 5 },
+          { itemId: "T7_PLANKS_LEVEL2", count: 1 },
+        ],
+      },
+    ],
+  };
+  const enchRows: AodpPriceRow[] = [
+    row("T8_WOOD_LEVEL2@2", "Fort Sterling", 5000, 4800),
+    row("T7_PLANKS_LEVEL2@2", "Fort Sterling", 20000, 19000),
+    row("T8_PLANKS_LEVEL2@2", "Fort Sterling", 50000, 45000),
+  ];
+  const flips = buildRefineFlips(enchRows, [enchRecipe], {
+    buySide: "instant",
+    sellSide: "order",
+    useFocus: true,
+  });
+  assert(flips.length === 1, "enchanted flip");
+  assert(flips[0].revenue === 50000, `ench revenue ${flips[0].revenue}`);
+  assert(
+    flips[0].ingredients.every((i) => i.unitPrice > 0),
+    "ench ingredients",
+  );
+}
+
+{
+  // Ghost buy-order: bid << ask must not be used as "cheap refine input".
+  const ghostRecipe: RefineRecipe = {
+    outputId: "T6_PLANKS_LEVEL2",
+    enchant: 2,
+    tier: 6,
+    family: "planks",
+    alternatives: [
+      {
+        ingredients: [
+          { itemId: "T6_WOOD_LEVEL2", count: 4 },
+          { itemId: "T5_PLANKS_LEVEL2", count: 1 },
+        ],
+      },
+    ],
+  };
+  const ghostRows: AodpPriceRow[] = [
+    row("T6_WOOD_LEVEL2", "Thetford", 6400, 6000),
+    row("T5_PLANKS_LEVEL2", "Brecilien", 5500, 2498), // ghost: bid << ask
+    row("T5_PLANKS_LEVEL2", "Lymhurst", 0, 3700), // ghost: bid without ask
+    row("T5_PLANKS_LEVEL2", "Martlock", 5000, 4500), // realistic
+    row("T6_PLANKS_LEVEL2", "Fort Sterling", 21000, 20000),
+  ];
+  const flips = buildRefineFlips(ghostRows, [ghostRecipe], {
+    buySide: "order",
+    sellSide: "order",
+    useFocus: false,
+  });
+  assert(flips.length === 1, "ghost: flip exists");
+  const plank = flips[0].ingredients.find((i) => i.itemId === "T5_PLANKS_LEVEL2");
+  assert(!!plank, "ghost: plank");
+  assert(plank!.city === "Martlock", `ghost city ${plank!.city}`);
+  assert(plank!.unitPrice === 4500, `ghost price ${plank!.unitPrice}`);
 }
 
 console.log("smoke-refine-flips ok");

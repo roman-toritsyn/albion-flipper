@@ -1,5 +1,6 @@
 import type { AodpPriceRow } from "./types";
 import { BLACK_MARKET, CITY_LOCATIONS, REFINE_CITIES } from "./types";
+import { fromAodpMarketId, toAodpMarketId } from "./aodpItemIds";
 
 const AODP_HOST = "https://europe.albion-online-data.com";
 const FLIP_LOCATIONS = [...CITY_LOCATIONS, BLACK_MARKET].join(",");
@@ -127,5 +128,11 @@ export async function fetchCraftPrices(itemIds: string[]): Promise<AodpPriceRow[
 
 /** Fetch city market prices for refine (no BM needed). */
 export async function fetchRefinePrices(itemIds: string[]): Promise<AodpPriceRow[]> {
-  return fetchPrices(itemIds, REFINE_CITIES.join(","), "refine");
+  const aodpIds = [...new Set(itemIds.map(toAodpMarketId))];
+  const rows = await fetchPrices(aodpIds, REFINE_CITIES.join(","), "refine");
+  // Normalize enchanted-resource ids back to dump UniqueNames (…_LEVELn).
+  return rows.map((row) => ({
+    ...row,
+    item_id: fromAodpMarketId(row.item_id),
+  }));
 }

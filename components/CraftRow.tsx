@@ -1,5 +1,6 @@
 "use client";
 
+import { CopyNameButton } from "@/components/CopyNameButton";
 import { QualityBadge } from "@/components/QualityBadge";
 import { isCityStalerThanBm } from "@/lib/calc";
 import {
@@ -25,7 +26,6 @@ type Props = {
 export function CraftRow({ flip, taxRate, index = 0, now = Date.now() }: Props) {
   const { t, itemLang } = useLocale();
   const [open, setOpen] = useState(false);
-  const [copied, setCopied] = useState(false);
   const q = isItemQuality(flip.quality) ? flip.quality : 1;
   const qColors = QUALITY_COLORS[q];
   const displayName = itemDisplayName(flip.outputId, itemLang);
@@ -35,26 +35,6 @@ export function CraftRow({ flip, taxRate, index = 0, now = Date.now() }: Props) 
   const staleIngredients = flip.ingredients.some((ing) =>
     isCityStalerThanBm(ing.date, flip.bmBuyDate, now),
   );
-
-  async function copyName(e: React.MouseEvent | React.PointerEvent) {
-    e.stopPropagation();
-    try {
-      await navigator.clipboard.writeText(displayName);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1400);
-    } catch {
-      const ta = document.createElement("textarea");
-      ta.value = displayName;
-      ta.style.position = "fixed";
-      ta.style.left = "-9999px";
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand("copy");
-      document.body.removeChild(ta);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1400);
-    }
-  }
 
   return (
     <article
@@ -89,23 +69,12 @@ export function CraftRow({ flip, taxRate, index = 0, now = Date.now() }: Props) 
           />
           <div className="min-w-0">
             <div className="flex min-w-0 items-center gap-1.5">
-              <span className="relative shrink-0">
-                <button
-                  type="button"
-                  onClick={copyName}
-                  onPointerDown={(e) => e.stopPropagation()}
-                  title={t("copyName")}
-                  aria-label={t("copyNameAria")}
-                  className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md border border-border text-muted transition-colors hover:border-brass hover:text-brass"
-                >
-                  {copied ? "✓" : "⧉"}
-                </button>
-                {copied && (
-                  <p className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 -translate-x-1/2 whitespace-nowrap text-[10px] leading-none text-profit">
-                    {t("copied")}
-                  </p>
-                )}
-              </span>
+              <CopyNameButton
+                text={displayName}
+                title={t("copyName")}
+                ariaLabel={t("copyNameAria")}
+                copiedLabel={t("copied")}
+              />
               <p className="min-w-0 truncate font-[family-name:var(--font-display)] text-base font-medium leading-snug text-text">
                 {displayName}
               </p>
@@ -133,7 +102,7 @@ export function CraftRow({ flip, taxRate, index = 0, now = Date.now() }: Props) 
           <div>
             <p className="text-[10px] uppercase tracking-[0.16em] text-muted">{t("craftBmSell")}</p>
             <p className="mt-1 font-[family-name:var(--font-display)] text-sm text-text">
-              Black Market
+              {t("blackMarket")}
             </p>
             <p className="font-[family-name:var(--font-mono)] text-lg tabular text-text">
               {formatSilver(flip.bmBuy)}
@@ -144,12 +113,14 @@ export function CraftRow({ flip, taxRate, index = 0, now = Date.now() }: Props) 
           <div className="lg:text-right">
             <p className="text-[10px] uppercase tracking-[0.16em] text-muted">{t("craftYouGet")}</p>
             <p className="mt-1 font-[family-name:var(--font-mono)] text-sm tabular text-text-dim">
-              net {formatSilver(net)}
+              {t("netLabel", { value: formatSilver(net) })}
             </p>
             <p className="font-[family-name:var(--font-mono)] text-2xl font-medium tabular text-profit">
               {formatSignedSilver(profit)}
             </p>
-            <p className="text-[11px] text-muted">ROI {formatRoi(roi)}</p>
+            <p className="text-[11px] text-muted">
+              {t("roiLabel", { value: formatRoi(roi) })}
+            </p>
           </div>
         </div>
       </div>
@@ -166,24 +137,37 @@ export function CraftRow({ flip, taxRate, index = 0, now = Date.now() }: Props) 
             </p>
           </div>
           <ul className="py-1">
-            {flip.ingredients.map((ing) => (
-              <li
-                key={`${ing.itemId}-${ing.city}`}
-                className="flex items-center justify-between gap-3 px-3 py-2"
-              >
-                <span className="min-w-0">
-                  <span className="block truncate font-[family-name:var(--font-display)] text-sm text-text">
-                    {ing.count}× {itemDisplayName(ing.itemId, itemLang)}
+            {flip.ingredients.map((ing) => {
+              const name = itemDisplayName(ing.itemId, itemLang);
+              return (
+                <li
+                  key={`${ing.itemId}-${ing.city}`}
+                  className="flex items-center justify-between gap-3 px-3 py-2"
+                >
+                  <span className="flex min-w-0 items-start gap-1.5">
+                    <CopyNameButton
+                      text={name}
+                      title={t("copyName")}
+                      ariaLabel={t("copyNameAria")}
+                      copiedLabel={t("copied")}
+                      className="mt-0.5 inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-md border border-border text-muted transition-colors hover:border-brass hover:text-brass"
+                      iconSize={12}
+                    />
+                    <span className="min-w-0">
+                      <span className="block truncate font-[family-name:var(--font-display)] text-sm text-text">
+                        {ing.count}× {name}
+                      </span>
+                      <span className="text-[11px] text-muted">
+                        {t("craftBuyIn")} {ing.city} · {formatAgeLabelT(ing.date, now, t)}
+                      </span>
+                    </span>
                   </span>
-                  <span className="text-[11px] text-muted">
-                    {t("craftBuyIn")} {ing.city} · {formatAgeLabelT(ing.date, now, t)}
+                  <span className="shrink-0 font-[family-name:var(--font-mono)] text-xs tabular text-text">
+                    {formatSilver(ing.lineTotal)}
                   </span>
-                </span>
-                <span className="shrink-0 font-[family-name:var(--font-mono)] text-xs tabular text-text">
-                  {formatSilver(ing.lineTotal)}
-                </span>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}

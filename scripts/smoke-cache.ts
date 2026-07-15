@@ -67,7 +67,7 @@ async function main() {
     fresh: true,
     now: t0 + FRESH_COOLDOWN_MS + 1_000,
   });
-  // TTL still 90s so without fresh would hit; with fresh after cooldown should refetch
+  // TTL still active so without fresh would hit; with fresh after cooldown should refetch
   // But entry still valid for TTL — wantFresh && !withinCooldown → refetch
   if (forced.cacheHit !== false || calls !== 2) {
     throw new Error(`fresh after cooldown: hit=${forced.cacheHit} calls=${calls}`);

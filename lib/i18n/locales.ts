@@ -1,4 +1,5 @@
 import type { AppLocale, DumpLang, Messages } from "./types";
+import { LOCALE_EXTRAS } from "./localeExtras";
 
 export const STORAGE_KEY = "flipper-locale";
 
@@ -185,6 +186,31 @@ export const en: Messages = {
   dailyBonus: "Daily bonus",
   dailyBonusOff: "Off",
   dailyBonusPct: "+{n}%",
+  refineManualTitle: "Manual calc",
+  refineManualHint: "Pick a recipe, enter your prices, see profit with current RRR settings.",
+  refineManualRecipe: "Resource",
+  refineManualPick: "Select…",
+  refineManualUnitPrice: "Unit buy price",
+  refineManualSellPrice: "Sell price (1× output)",
+  refineManualFillMarket: "Fill from market",
+  refineManualNeedPrices: "Enter all prices to see profit.",
+  refineManualNoMarket: "No market quotes found for this recipe right now.",
+  serverEurope: "Europe",
+  blackMarket: "Black Market",
+  netLabel: "net {value}",
+  roiLabel: "ROI {value}",
+  netAbbrev: "net",
+  roiAbbrev: "ROI",
+  flipKindLocal: "local",
+  flipKindRemote: "remote",
+  refineRouteDetail: "buy → {refine} → {sell}",
+  rrrAbbrev: "RRR",
+  brandBmTitle: "FLIP",
+  brandBmSubtitle: "BLACK MARKET",
+  brandCraftTitle: "CRAFT",
+  brandCraftSubtitle: "→ BLACK MARKET",
+  brandRefineTitle: "REFINE",
+  navAriaMain: "Main navigation",
 };
 
 export const uk: Messages = {
@@ -225,7 +251,7 @@ export const uk: Messages = {
   quality: "Якість",
   allQualities: "Усі якості",
   tax: "Податок",
-  taxPremium: "4% premium",
+  taxPremium: "4% преміум",
   taxFull: "8%",
   dataAge: "Вік даних",
   age1h: "1 год",
@@ -244,7 +270,7 @@ export const uk: Messages = {
   youGet: "Отримаєш",
   cityPrices: "Ціни по містах",
   latestPrices: "Останні ціни · усі міста",
-  bmBuy: "Black Market · buy",
+  bmBuy: "Black Market · купівля",
   noCityPrices: "Немає цін по містах у поточному фетчі",
   now: "зараз",
   ageNoData: "немає даних",
@@ -259,11 +285,11 @@ export const uk: Messages = {
   qMasterpiece: "Шедевр",
   navBmFlips: "BM фліпи",
   navCraftFlips: "Крафт → BM",
-  navRefine: "Refine",
+  navRefine: "Рефайн",
   craftFamily: "Тип",
   craftFamilyAll: "Усі",
   craftFamilyCapes: "Плащі",
-  craftFamilyRoyal: "Royal",
+  craftFamilyRoyal: "Роял",
   craftBuyMode: "Купівля інгредієнтів",
   craftBuyRoyal: "Королівські",
   craftBuyCaerleon: "Caerleon",
@@ -273,7 +299,7 @@ export const uk: Messages = {
   craftCost: "Собівартість",
   craftBmSell: "BM зкуповує",
   craftIngredients: "Інгредієнти",
-  craftNoDeals: "Немає craft-угод для порогу +{threshold} при віці до {age}",
+  craftNoDeals: "Немає крафт-угод для порогу +{threshold} при віці до {age}",
   craftBuyIn: "Купити в",
   craftYouGet: "Отримаєш",
   refineSubtitle: "Купити → перекрафтити → продати",
@@ -294,11 +320,37 @@ export const uk: Messages = {
   refineFamilyCloth: "Тканина",
   refineFamilyLeather: "Шкіра",
   refineFamilyStone: "Камінь",
-  refineNoDeals: "Немає refine-угод при віці до {age}",
+  refineNoDeals: "Немає рефайн-угод при віці до {age}",
   weightEach: "{n} кг / шт",
   dailyBonus: "Денний бонус",
   dailyBonusOff: "Вимк",
   dailyBonusPct: "+{n}%",
+  refineManualTitle: "Ручний розрахунок",
+  refineManualHint:
+    "Обери ресурс, вбий свої ціни — профіт з поточними RRR, фокусом і денним бонусом.",
+  refineManualRecipe: "Ресурс",
+  refineManualPick: "Обери…",
+  refineManualUnitPrice: "Ціна за 1 шт (купівля)",
+  refineManualSellPrice: "Ціна продажу (1× вихід)",
+  refineManualFillMarket: "Підставити з ринку",
+  refineManualNeedPrices: "Введи всі ціни, щоб побачити профіт.",
+  refineManualNoMarket: "Зараз немає ринкових цін для цього рецепту.",
+  serverEurope: "Europe",
+  blackMarket: "Black Market",
+  netLabel: "нетто {value}",
+  roiLabel: "ROI {value}",
+  netAbbrev: "нетто",
+  roiAbbrev: "ROI",
+  flipKindLocal: "локальний",
+  flipKindRemote: "віддалений",
+  refineRouteDetail: "купівля → {refine} → {sell}",
+  rrrAbbrev: "RRR",
+  brandBmTitle: "FLIP",
+  brandBmSubtitle: "BLACK MARKET",
+  brandCraftTitle: "CRAFT",
+  brandCraftSubtitle: "→ BLACK MARKET",
+  brandRefineTitle: "REFINE",
+  navAriaMain: "Головна навігація",
 };
 
 export const de: Messages = {
@@ -367,8 +419,8 @@ export const de: Messages = {
   qOutstanding: "Hervorragend",
   qExcellent: "Exzellent",
   qMasterpiece: "Meisterwerk",
+  ...LOCALE_EXTRAS.de,
 };
-
 export const fr: Messages = {
   ...en,
   language: "Langue",
@@ -435,8 +487,8 @@ export const fr: Messages = {
   qOutstanding: "Remarquable",
   qExcellent: "Excellent",
   qMasterpiece: "Chef-d’œuvre",
+  ...LOCALE_EXTRAS.fr,
 };
-
 export const ru: Messages = {
   ...en,
   language: "Язык",
@@ -503,8 +555,8 @@ export const ru: Messages = {
   qOutstanding: "Выдающееся",
   qExcellent: "Отличное",
   qMasterpiece: "Шедевр",
+  ...LOCALE_EXTRAS.ru,
 };
-
 export const pl: Messages = {
   ...en,
   language: "Język",
@@ -571,8 +623,8 @@ export const pl: Messages = {
   qOutstanding: "Wybitna",
   qExcellent: "Doskonała",
   qMasterpiece: "Arcydzieło",
+  ...LOCALE_EXTRAS.pl,
 };
-
 export const es: Messages = {
   ...en,
   language: "Idioma",
@@ -639,8 +691,8 @@ export const es: Messages = {
   qOutstanding: "Sobresaliente",
   qExcellent: "Excelente",
   qMasterpiece: "Obra maestra",
+  ...LOCALE_EXTRAS.es,
 };
-
 export const pt: Messages = {
   ...en,
   language: "Idioma",
@@ -707,8 +759,8 @@ export const pt: Messages = {
   qOutstanding: "Excelente",
   qExcellent: "Excepcional",
   qMasterpiece: "Obra-prima",
+  ...LOCALE_EXTRAS.pt,
 };
-
 export const it: Messages = {
   ...en,
   language: "Lingua",
@@ -775,8 +827,8 @@ export const it: Messages = {
   qOutstanding: "Eccellente",
   qExcellent: "Straordinaria",
   qMasterpiece: "Capolavoro",
+  ...LOCALE_EXTRAS.it,
 };
-
 export const zhCN: Messages = {
   ...en,
   language: "语言",
@@ -842,8 +894,8 @@ export const zhCN: Messages = {
   qOutstanding: "卓越",
   qExcellent: "杰出",
   qMasterpiece: "杰作",
+  ...LOCALE_EXTRAS["zh-CN"],
 };
-
 export const zhTW: Messages = {
   ...zhCN,
   language: "語言",
@@ -909,8 +961,8 @@ export const zhTW: Messages = {
   qOutstanding: "卓越",
   qExcellent: "傑出",
   qMasterpiece: "傑作",
+  ...LOCALE_EXTRAS["zh-TW"],
 };
-
 export const ko: Messages = {
   ...en,
   language: "언어",
@@ -976,8 +1028,8 @@ export const ko: Messages = {
   qOutstanding: "뛰어남",
   qExcellent: "우수",
   qMasterpiece: "걸작",
+  ...LOCALE_EXTRAS.ko,
 };
-
 export const ja: Messages = {
   ...en,
   language: "言語",
@@ -1043,8 +1095,8 @@ export const ja: Messages = {
   qOutstanding: "傑出",
   qExcellent: "優秀",
   qMasterpiece: "傑作",
+  ...LOCALE_EXTRAS.ja,
 };
-
 export const id: Messages = {
   ...en,
   language: "Bahasa",
@@ -1111,8 +1163,8 @@ export const id: Messages = {
   qOutstanding: "Luar biasa",
   qExcellent: "Unggul",
   qMasterpiece: "Mahakarya",
+  ...LOCALE_EXTRAS.id,
 };
-
 export const tr: Messages = {
   ...en,
   language: "Dil",
@@ -1179,8 +1231,8 @@ export const tr: Messages = {
   qOutstanding: "Üstün",
   qExcellent: "Mükemmel",
   qMasterpiece: "Şaheser",
+  ...LOCALE_EXTRAS.tr,
 };
-
 export const ar: Messages = {
   ...en,
   language: "اللغة",
@@ -1247,8 +1299,8 @@ export const ar: Messages = {
   qOutstanding: "بارز",
   qExcellent: "ممتاز",
   qMasterpiece: "تحفة",
+  ...LOCALE_EXTRAS.ar,
 };
-
 export const MESSAGES: Record<AppLocale, Messages> = {
   uk,
   en,

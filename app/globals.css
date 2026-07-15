@@ -87,6 +87,21 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* Clickable controls — default OS cursor is arrow in some browsers */
+button:enabled,
+a[href],
+[role="button"],
+select,
+summary,
+label:has(> select),
+label:has(input[type="checkbox"]) {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
 @keyframes shimmer {
   0% {
     background-position: -200% 0;

@@ -5,6 +5,7 @@ import {
   profit as calcProfit,
   roi as calcRoi,
 } from "./calc";
+import { fromAodpMarketId } from "./aodpItemIds";
 import {
   resourceReturnRate,
   specialtyCityFor,
@@ -105,10 +106,11 @@ function buildPriceIndex(rows: AodpPriceRow[]): Map<string, PriceCell> {
     // Resources are quality 1 listings
     if ((row.quality || 1) !== 1) continue;
 
-    let cell = map.get(row.item_id);
+    const itemId = fromAodpMarketId(row.item_id);
+    let cell = map.get(itemId);
     if (!cell) {
       cell = new Map();
-      map.set(row.item_id, cell);
+      map.set(itemId, cell);
     }
     const prev = cell.get(city) ?? {
       instant: 0,
@@ -159,6 +161,11 @@ function bestBuy(
     const picked = pickPrice(q, buySide, "buy");
     if (!picked) continue;
     if (!quoteFresh(picked.date, freshness)) continue;
+    // Order-buy needs a believable local market: bid without ask, or bid far
+    // below ask, is a phantom quote that invents refine profit.
+    if (buySide === "order") {
+      if (!(q.instant > 0) || picked.price < q.instant * 0.75) continue;
+    }
     if (!best || picked.price < best.price) {
       best = { ...picked, city };
     }
@@ -354,6 +361,150 @@ export function buildRefineFlips(
   }
 
   return flips;
+}
+
+/** First non-token alternative ingredients, or null. */
+export function marketIngredients(
+  recipe: RefineRecipe,
+): RefineIngredient[] | null {
+  for (const alt of recipe.alternatives) {
+    if (!isTokenAlt(alt.ingredients)) return alt.ingredients;
+  }
+  return null;
+}
+
+/**
+ * Best-effort market quotes for the manual calculator.
+ * Fills each ingredient / sell independently — unlike buildRefineFlips,
+ * does not require a complete recipe (enchanted mats often miss one side).
+ */
+export function marketFillForRecipe(
+  rows: AodpPriceRow[],
+  recipe: RefineRecipe,
+  options: BuildRefineOptions = {},
+): { unitPrices: Record<string, number>; sellPrice: number | null } {
+  const buySide = options.buySide ?? "instant";
+  const sellSide = options.sellSide ?? "order";
+  const freshness: Freshness =
+    options.maxAgeMinutes !== undefined
+      ? {
+          maxAgeMinutes: options.maxAgeMinutes,
+          nowMs: options.nowMs ?? Date.now(),
+        }
+      : null;
+  const prices = buildPriceIndex(rows);
+  const refineCity =
+    options.refineCity &&
+    options.refineCity !== "auto" &&
+    CITY_SET.has(options.refineCity)
+      ? options.refineCity
+      : specialtyCityFor(recipe.family);
+
+  const unitPrices: Record<string, number> = {};
+  const ingredients = marketIngredients(recipe) ?? [];
+  for (const ing of ingredients) {
+    const buy = bestBuy(ing.itemId, prices, buySide, freshness);
+    if (buy) unitPrices[ing.itemId] = buy.price;
+  }
+
+  const sell = sellForRefine(
+    recipe.outputId,
+    prices,
+    sellSide,
+    refineCity,
+    freshness,
+  );
+
+  return {
+    unitPrices,
+    sellPrice: sell ? sell.price : null,
+  };
+}
+
+export type ManualRefineResult = {
+  refineCity: RefineMarketCity;
+  rrr: number;
+  ingredients: Array<{
+    itemId: string;
+    count: number;
+    unitPrice: number;
+    lineTotal: number;
+  }>;
+  grossCost: number;
+  effectiveCost: number;
+  revenue: number;
+  net: number;
+  profit: number;
+  roi: number;
+  /** All unit prices and sell price are > 0 */
+  complete: boolean;
+};
+
+/**
+ * Manual refine math: user-entered unit prices × RRR vs sell price.
+ */
+export function calcManualRefine(options: {
+  recipe: RefineRecipe;
+  unitPrices: Record<string, number>;
+  sellPrice: number;
+  refineCity?: RefineMarketCity | "auto";
+  useFocus?: boolean;
+  dailyBonus?: DailyProductionBonus;
+  taxRate?: number;
+}): ManualRefineResult | null {
+  const ingredients = marketIngredients(options.recipe);
+  if (!ingredients) return null;
+
+  const refineCity =
+    options.refineCity &&
+    options.refineCity !== "auto" &&
+    CITY_SET.has(options.refineCity)
+      ? options.refineCity
+      : specialtyCityFor(options.recipe.family);
+  const useFocus = options.useFocus ?? true;
+  const dailyBonus = options.dailyBonus ?? 0;
+  const taxRate = options.taxRate ?? 0.04;
+  const rrr = resourceReturnRate(
+    options.recipe.family,
+    refineCity,
+    useFocus,
+    dailyBonus,
+  );
+
+  const lines: ManualRefineResult["ingredients"] = [];
+  let grossCost = 0;
+  let complete = options.sellPrice > 0;
+  for (const ing of ingredients) {
+    const unitPrice = Number(options.unitPrices[ing.itemId] ?? 0);
+    if (!(unitPrice > 0)) complete = false;
+    const lineTotal = unitPrice * ing.count;
+    grossCost += lineTotal;
+    lines.push({
+      itemId: ing.itemId,
+      count: ing.count,
+      unitPrice,
+      lineTotal,
+    });
+  }
+
+  const effectiveCost = grossCost * (1 - rrr);
+  const revenue = Number(options.sellPrice) || 0;
+  const net = netAfterTax(revenue, taxRate);
+  const profit = calcProfit(revenue, effectiveCost, taxRate);
+  const roi = calcRoi(revenue, effectiveCost, taxRate);
+
+  return {
+    refineCity,
+    rrr,
+    ingredients: lines,
+    grossCost,
+    effectiveCost,
+    revenue,
+    net,
+    profit,
+    roi,
+    complete,
+  };
 }
 
 export function refineNet(revenue: number, taxRate: number): number {

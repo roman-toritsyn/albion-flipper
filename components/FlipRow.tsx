@@ -153,7 +153,7 @@ export function FlipRow({ flip, index = 0, now = Date.now(), cityQuotes = [] }: 
                   )}
                 </button>
                 {copied && (
-                  <p className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 -translate-x-1/2 whitespace-nowrap text-[10px] leading-none text-profit">
+                  <p className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 whitespace-nowrap text-[10px] leading-none text-profit">
                     {t("copied")}
                   </p>
                 )}
@@ -171,13 +171,8 @@ export function FlipRow({ flip, index = 0, now = Date.now(), cityQuotes = [] }: 
                     : "border-remote/40 text-remote"
                 }`}
               >
-                {flip.kind === "local" ? "local" : "remote"}
+                {flip.kind === "local" ? t("flipKindLocal") : t("flipKindRemote")}
               </span>
-              {open && (
-                <span className="inline-block rounded-md border border-profit/40 px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-profit">
-                  {t("opened")}
-                </span>
-              )}
             </div>
           </div>
         </div>
@@ -197,7 +192,7 @@ export function FlipRow({ flip, index = 0, now = Date.now(), cityQuotes = [] }: 
           <div>
             <p className="text-[10px] uppercase tracking-[0.16em] text-muted">{t("bmBuys")}</p>
             <p className="mt-1 font-[family-name:var(--font-display)] text-sm text-text">
-              Black Market
+              {t("blackMarket")}
             </p>
             <p className="font-[family-name:var(--font-mono)] text-lg tabular text-text">
               {formatSilver(flip.bmBuy)}
@@ -209,12 +204,14 @@ export function FlipRow({ flip, index = 0, now = Date.now(), cityQuotes = [] }: 
           <div className="lg:text-right">
             <p className="text-[10px] uppercase tracking-[0.16em] text-muted">{t("youGet")}</p>
             <p className="mt-1 font-[family-name:var(--font-mono)] text-sm tabular text-text-dim">
-              net {formatSilver(flip.netAfterTax)}
+              {t("netLabel", { value: formatSilver(flip.netAfterTax) })}
             </p>
             <p className="font-[family-name:var(--font-mono)] text-2xl font-medium tabular text-profit">
               {formatSignedSilver(flip.profit)}
             </p>
-            <p className="text-[11px] text-muted">ROI {formatRoi(flip.roi)}</p>
+            <p className="text-[11px] text-muted">
+              {t("roiLabel", { value: formatRoi(flip.roi) })}
+            </p>
           </div>
         </div>
       </div>

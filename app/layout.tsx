@@ -25,7 +25,7 @@ const plexMono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   title: "Flipper · Black Market",
-  description: "Вигідні фліпи місто → Black Market (Europe)",
+  description: "City → Black Market flips (Europe)",
 };
 
 export default function RootLayout({

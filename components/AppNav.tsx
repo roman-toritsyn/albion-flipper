@@ -15,7 +15,7 @@ export function AppNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="mx-auto flex w-full max-w-6xl gap-1 px-4 pt-4 sm:px-6" aria-label="Main">
+    <nav className="mx-auto flex w-full max-w-6xl gap-1 px-4 pt-4 sm:px-6" aria-label={t("navAriaMain")}>
       {TABS.map((tab) => {
         const active =
           tab.href === "/"

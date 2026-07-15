@@ -2,6 +2,7 @@
 
 import { LanguageSelect } from "@/components/LanguageSelect";
 import { LoadErrorBanner } from "@/components/LoadErrorBanner";
+import { RefineManualCalc } from "@/components/RefineManualCalc";
 import { RefineRow } from "@/components/RefineRow";
 import { useRefineFilterPrefs } from "@/hooks/useRefineFilterPrefs";
 import type { ApiErrorBody } from "@/lib/apiErrors";
@@ -173,10 +174,10 @@ export function RefineDashboard() {
       <header className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="font-[family-name:var(--font-display)] text-xs uppercase tracking-[0.28em] text-brass">
-            Europe
+            {t("serverEurope")}
           </p>
           <h1 className="mt-1 font-[family-name:var(--font-display)] text-4xl font-semibold tracking-tight text-text sm:text-5xl">
-            REFINE
+            {t("brandRefineTitle")}
           </h1>
           <p className="mt-1 font-[family-name:var(--font-display)] text-lg text-text-dim">
             {t("refineSubtitle")}
@@ -191,7 +192,7 @@ export function RefineDashboard() {
           >
             {refreshing
               ? t("refreshingDots")
-              : `Europe · ${formatCacheAge(fetchedAt, now)} · ${
+              : `${t("serverEurope")} · ${formatCacheAge(fetchedAt, now)} · ${
                   cacheHit === null ? "…" : cacheHit ? t("cacheHit") : t("freshData")
                 }`}
           </p>
@@ -286,7 +287,7 @@ export function RefineDashboard() {
             ))}
           </div>
         </div>
-        <label className="flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm">
+      <label className="flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-2 text-sm">
           <span className="text-muted">{t("refineCity")}</span>
           <select
             value={refineCity}
@@ -297,7 +298,7 @@ export function RefineDashboard() {
                   : (e.target.value as (typeof REFINE_CITIES)[number]),
               )
             }
-            className="bg-transparent font-[family-name:var(--font-mono)] text-text outline-none"
+            className="max-w-[14rem] bg-transparent font-[family-name:var(--font-mono)] text-text outline-none"
           >
             <option value="auto">{t("refineCityAuto")}</option>
             {REFINE_CITIES.map((c) => (
@@ -359,6 +360,17 @@ export function RefineDashboard() {
           </select>
         </label>
       </section>
+
+      <RefineManualCalc
+        rows={rows}
+        taxRate={taxRate}
+        useFocus={useFocus}
+        dailyBonus={dailyBonus}
+        refineCity={refineCity}
+        buySide={buySide}
+        sellSide={sellSide}
+        maxAge={maxAge}
+      />
 
       <section className="flex flex-col gap-2">
         <p className="font-[family-name:var(--font-mono)] text-xs text-muted">

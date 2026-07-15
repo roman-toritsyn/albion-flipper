@@ -250,13 +250,13 @@ export function Dashboard() {
       <header className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="font-[family-name:var(--font-display)] text-xs uppercase tracking-[0.28em] text-brass">
-            Europe
+            {t("serverEurope")}
           </p>
           <h1 className="mt-1 font-[family-name:var(--font-display)] text-4xl font-semibold tracking-tight text-text sm:text-5xl">
-            FLIP
+            {t("brandBmTitle")}
           </h1>
           <p className="mt-1 font-[family-name:var(--font-display)] text-lg text-text-dim">
-            BLACK MARKET
+            {t("brandBmSubtitle")}
           </p>
         </div>
         <div className="flex flex-col items-start gap-2 sm:items-end">
@@ -268,7 +268,7 @@ export function Dashboard() {
           >
             {refreshing
               ? t("refreshingDots")
-              : `Europe · ${formatCacheAge(fetchedAt, now)} · ${
+              : `${t("serverEurope")} · ${formatCacheAge(fetchedAt, now)} · ${
                   cacheHit === null ? "…" : cacheHit ? t("cacheHit") : t("freshData")
                 }`}
           </p>
