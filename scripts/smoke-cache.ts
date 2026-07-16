@@ -2,9 +2,9 @@ import { __resetCacheForTests, getOrFetchPrices } from "../lib/cache";
 import { FRESH_COOLDOWN_MS } from "../lib/constants";
 import type { AodpPriceRow } from "../lib/types";
 
-function row(): AodpPriceRow {
+function row(item_id = "T5_BAG"): AodpPriceRow {
   return {
-    item_id: "T5_BAG",
+    item_id,
     city: "Caerleon",
     quality: 1,
     sell_price_min: 1,
@@ -18,60 +18,67 @@ function row(): AodpPriceRow {
   };
 }
 
+function assertEq(actual: number, expected: number, msg: string): void {
+  if (actual !== expected) throw new Error(`${msg}: got ${actual} want ${expected}`);
+}
+
 async function main() {
   __resetCacheForTests();
-  let calls = 0;
-  const fetcher = async () => {
-    calls += 1;
+  const state = { calls: 0 };
+  const fetchedBatches: string[][] = [];
+  const fetchMissing = async (missing: string[]) => {
+    state.calls += 1;
+    fetchedBatches.push([...missing].sort());
     await new Promise((r) => setTimeout(r, 30));
-    return [row()];
+    return missing.map((id) => row(id));
   };
 
-  const a = await getOrFetchPrices(fetcher);
-  if (a.cacheHit !== false || calls !== 1) {
-    throw new Error(`1st: hit=${a.cacheHit} calls=${calls}`);
-  }
+  const a = await getOrFetchPrices(["T5_BAG"], fetchMissing);
+  if (a.cacheHit !== false) throw new Error(`1st: hit=${a.cacheHit}`);
+  assertEq(state.calls, 1, "1st calls");
 
-  const b = await getOrFetchPrices(fetcher);
-  if (b.cacheHit !== true || calls !== 1) {
-    throw new Error(`2nd: hit=${b.cacheHit} calls=${calls}`);
+  const b = await getOrFetchPrices(["T5_BAG"], fetchMissing);
+  if (b.cacheHit !== true) throw new Error(`2nd: hit=${b.cacheHit}`);
+  assertEq(state.calls, 1, "2nd calls");
+
+  // Different id set shares store: only fetch the new id
+  const c = await getOrFetchPrices(["T5_BAG", "T6_BAG"], fetchMissing);
+  if (c.cacheHit !== false) throw new Error(`missing-only: hit=${c.cacheHit}`);
+  assertEq(state.calls, 2, "missing-only calls");
+  if (fetchedBatches[1].join() !== "T6_BAG") {
+    throw new Error(`expected only T6_BAG, got ${fetchedBatches[1]}`);
+  }
+  if (c.data.length !== 2) {
+    throw new Error(`expected 2 rows got ${c.data.length}`);
   }
 
   __resetCacheForTests();
-  calls = 0;
+  state.calls = 0;
   const [p1, p2] = await Promise.all([
-    getOrFetchPrices(fetcher),
-    getOrFetchPrices(fetcher),
+    getOrFetchPrices(["T5_BAG"], fetchMissing),
+    getOrFetchPrices(["T5_BAG"], fetchMissing),
   ]);
-  if (calls !== 1) throw new Error(`coalesce calls=${calls}`);
+  assertEq(state.calls, 1, "coalesce calls");
   const hits = [p1.cacheHit, p2.cacheHit];
-  if (!hits.includes(false) || !hits.includes(true)) {
-    // One initiator false, one waiter true — or both false if race creates two (unacceptable)
-    // Allow both false only if calls===1? If calls===1 and both false that's slightly wrong labels but ok.
-    // Require calls===1 already.
-    console.log("coalesce hits", hits);
-  }
-  if (calls !== 1) throw new Error("coalesce failed");
+  console.log("coalesce hits", hits);
 
-  const after = await getOrFetchPrices(fetcher, { fresh: true });
-  if (after.cacheHit !== true || calls !== 1) {
-    throw new Error(`fresh cooldown: hit=${after.cacheHit} calls=${calls}`);
-  }
+  const after = await getOrFetchPrices(["T5_BAG"], fetchMissing, { fresh: true });
+  if (after.cacheHit !== true) throw new Error(`fresh cooldown: hit=${after.cacheHit}`);
+  assertEq(state.calls, 1, "fresh cooldown calls");
 
-  // Simulate past cooldown + TTL expired
+  // Simulate past cooldown + force fresh
   __resetCacheForTests();
-  calls = 0;
+  state.calls = 0;
   const t0 = Date.now();
-  await getOrFetchPrices(fetcher, { now: t0 });
-  const forced = await getOrFetchPrices(fetcher, {
+  await getOrFetchPrices(["T5_BAG"], fetchMissing, { now: t0 });
+  const forced = await getOrFetchPrices(["T5_BAG"], fetchMissing, {
     fresh: true,
     now: t0 + FRESH_COOLDOWN_MS + 1_000,
   });
-  // TTL still active so without fresh would hit; with fresh after cooldown should refetch
-  // But entry still valid for TTL — wantFresh && !withinCooldown → refetch
-  if (forced.cacheHit !== false || calls !== 2) {
-    throw new Error(`fresh after cooldown: hit=${forced.cacheHit} calls=${calls}`);
+  if (forced.cacheHit !== false) {
+    throw new Error(`fresh after cooldown: hit=${forced.cacheHit}`);
   }
+  assertEq(state.calls, 2, "fresh after cooldown calls");
 
   console.log("cache OK");
 }

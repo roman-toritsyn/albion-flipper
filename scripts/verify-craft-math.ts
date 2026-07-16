@@ -329,7 +329,7 @@ async function main() {
 
   __resetCacheForTests();
   const ids = craftPriceItemIds();
-  const { data } = await getOrFetchCraftPrices(() => fetchCraftPrices(ids));
+  const { data } = await getOrFetchCraftPrices(ids, (missing) => fetchCraftPrices(missing));
   auditModes(data);
   console.log("verify-craft-math ok");
 }

@@ -12,6 +12,8 @@
     "lint": "eslint",
     "smoke:calc": "tsx -e \"import {netAfterTax,profit} from './lib/calc'; if(profit(100000,80000,0.04)!==16000) throw new Error('fail'); console.log('ok')\"",
     "smoke:cache": "tsx scripts/smoke-cache.ts",
+    "smoke:price-store": "tsx scripts/smoke-price-store.ts",
+    "audit:parity": "tsx scripts/audit-price-parity.ts",
     "smoke:aodp": "tsx scripts/smoke-aodp.ts",
     "smoke:flips": "tsx scripts/smoke-flips.ts",
     "smoke:craft-recipes": "tsx scripts/smoke-craft-recipes.ts",

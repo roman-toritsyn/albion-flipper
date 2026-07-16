@@ -1,4 +1,4 @@
-import { fetchUpgradePrices } from "@/lib/aodp";
+import { fetchBrecilienPrices, fetchCityBmPrices } from "@/lib/aodp";
 import { upstreamErrorResponse } from "@/lib/apiErrors";
 import { getOrFetchUpgradePrices } from "@/lib/cache";
 import { upgradePriceItemIds } from "@/lib/upgradeFlips";
@@ -14,7 +14,11 @@ export async function GET(req: NextRequest) {
 
   try {
     const result = await getOrFetchUpgradePrices(
-      () => fetchUpgradePrices(UPGRADE_ITEM_IDS),
+      UPGRADE_ITEM_IDS,
+      {
+        fetchCityBm: (ids) => fetchCityBmPrices(ids),
+        fetchBrecilien: (ids) => fetchBrecilienPrices(ids),
+      },
       { fresh },
     );
 

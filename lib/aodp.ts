@@ -3,15 +3,8 @@ import { BLACK_MARKET, CITY_LOCATIONS, REFINE_CITIES } from "./types";
 import { fromAodpMarketId, toAodpMarketId } from "./aodpItemIds";
 
 const AODP_HOST = "https://europe.albion-online-data.com";
+/** Royal cities + Caerleon + Black Market — shared by flips / craft / upgrade city pack. */
 const FLIP_LOCATIONS = [...CITY_LOCATIONS, BLACK_MARKET].join(",");
-/** Craft needs ingredient sell prices in cities + BM buy on output. */
-const CRAFT_LOCATIONS = [...CITY_LOCATIONS, BLACK_MARKET].join(",");
-/** Upgrade: royal + Caerleon + Brecilien + BM. */
-const UPGRADE_LOCATIONS = [
-  ...CITY_LOCATIONS,
-  "Brecilien",
-  BLACK_MARKET,
-].join(",");
 /** All Albion qualities: Normal → Masterpiece */
 const QUALITIES = "1,2,3,4,5";
 const BATCH_SIZE = 60;
@@ -124,12 +117,22 @@ async function fetchPrices(
 
 /** Fetch Europe market prices for BM flips (all cities + Black Market). */
 export async function fetchEuropePrices(itemIds: string[]): Promise<AodpPriceRow[]> {
-  return fetchPrices(itemIds, FLIP_LOCATIONS, "flips");
+  return fetchCityBmPrices(itemIds);
 }
 
 /** Fetch city + BM prices for craft flips. */
 export async function fetchCraftPrices(itemIds: string[]): Promise<AodpPriceRow[]> {
-  return fetchPrices(itemIds, CRAFT_LOCATIONS, "craft");
+  return fetchCityBmPrices(itemIds);
+}
+
+/** City markets + Black Market (shared location pack for flips/craft/upgrade). */
+export async function fetchCityBmPrices(itemIds: string[]): Promise<AodpPriceRow[]> {
+  return fetchPrices(itemIds, FLIP_LOCATIONS, "city+bm");
+}
+
+/** Brecilien-only prices (upgrade location pack). */
+export async function fetchBrecilienPrices(itemIds: string[]): Promise<AodpPriceRow[]> {
+  return fetchPrices(itemIds, "Brecilien", "brecilien");
 }
 
 /** Fetch city market prices for refine (no BM needed). */
@@ -143,7 +146,14 @@ export async function fetchRefinePrices(itemIds: string[]): Promise<AodpPriceRow
   }));
 }
 
-/** Fetch buy cities + BM for upgrade (enchant) flips. */
+/**
+ * Fetch buy cities + BM + Brecilien for upgrade (single-shot facade).
+ * Prefer getOrFetchUpgradePrices + split cityBm/brecilien packs in API routes.
+ */
 export async function fetchUpgradePrices(itemIds: string[]): Promise<AodpPriceRow[]> {
-  return fetchPrices(itemIds, UPGRADE_LOCATIONS, "upgrade");
+  const [cityBm, brec] = await Promise.all([
+    fetchCityBmPrices(itemIds),
+    fetchBrecilienPrices(itemIds),
+  ]);
+  return [...cityBm, ...brec];
 }

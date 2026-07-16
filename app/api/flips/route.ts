@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
   const fresh = req.nextUrl.searchParams.get("fresh") === "1";
 
   try {
-    const result = await getOrFetchPrices(() => fetchEuropePrices(ITEM_IDS), {
+    const result = await getOrFetchPrices(ITEM_IDS, (ids) => fetchEuropePrices(ids), {
       fresh,
     });
 

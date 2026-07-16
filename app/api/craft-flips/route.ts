@@ -14,7 +14,8 @@ export async function GET(req: NextRequest) {
 
   try {
     const result = await getOrFetchCraftPrices(
-      () => fetchCraftPrices(CRAFT_ITEM_IDS),
+      CRAFT_ITEM_IDS,
+      (ids) => fetchCraftPrices(ids),
       { fresh },
     );
 

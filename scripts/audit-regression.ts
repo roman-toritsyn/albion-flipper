@@ -52,7 +52,7 @@ async function auditBmFlips() {
   console.log("\n[BM flips /]");
   __resetCacheForTests();
   const result = await withRetry("BM", () =>
-    getOrFetchPrices(() => fetchEuropePrices(ITEM_IDS)),
+    getOrFetchPrices(ITEM_IDS, (ids) => fetchEuropePrices(ids)),
   );
   assert(Array.isArray(result.data) && result.data.length > 0, "price rows");
   const flips = buildFlips(result.data);
@@ -79,7 +79,7 @@ async function auditCraftModes() {
   assert(CRAFT_RECIPES.length === 575, `recipes ${CRAFT_RECIPES.length}`);
 
   const { data } = await withRetry("craft", () =>
-    getOrFetchCraftPrices(() => fetchCraftPrices(ids)),
+    getOrFetchCraftPrices(ids, (missing) => fetchCraftPrices(missing)),
   );
   const byMode = buildCraftFlipsByMode(data);
 
@@ -180,12 +180,11 @@ function auditPrefsHelpers() {
 }
 
 function auditCachesIsolated() {
-  console.log("\n[Cache isolation]");
-  // After both fetches, resetting and sequential caches shouldn't cross-contaminate types
-  // Smoke: craftPriceItemIds subset not equal gear — just ensure functions exist
+  console.log("\n[Cache entrypoints]");
+  // Shared city+BM store is reached via both entrypoints (missing-only fill).
   assert(typeof getOrFetchPrices === "function", "getOrFetchPrices");
   assert(typeof getOrFetchCraftPrices === "function", "getOrFetchCraftPrices");
-  ok("separate craft + gear cache entrypoints");
+  ok("getOrFetchPrices + getOrFetchCraftPrices (shared city+BM)");
 }
 
 async function main() {

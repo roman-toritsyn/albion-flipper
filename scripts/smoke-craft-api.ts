@@ -24,11 +24,11 @@ async function main() {
   const ids = craftPriceItemIds();
   assert(ids.length > 100, `too few craft ids: ${ids.length}`);
 
-  const first = await getOrFetchCraftPrices(() => fetchCraftPrices(ids));
+  const first = await getOrFetchCraftPrices(ids, (missing) => fetchCraftPrices(missing));
   assert(!first.cacheHit, "first fetch should miss cache");
   assert(Array.isArray(first.data), "data array");
 
-  const second = await getOrFetchCraftPrices(() => fetchCraftPrices(ids));
+  const second = await getOrFetchCraftPrices(ids, (missing) => fetchCraftPrices(missing));
   assert(second.cacheHit, "second fetch should hit cache");
 
   const byMode = buildCraftFlipsByMode(first.data);

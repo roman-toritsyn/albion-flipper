@@ -1,4 +1,13 @@
 import { CACHE_SCHEMA_VERSION, CACHE_TTL_MS, FRESH_COOLDOWN_MS } from "./constants";
+import {
+  __resetPriceStoresForTests,
+  clearBrecilienPriceStore,
+  clearCityBmPriceStore,
+  ensureBrecilienPrices,
+  ensureCityBmPrices,
+  getCityBmStoreMeta,
+  type FetchMissing,
+} from "./priceStore";
 import type { AodpPriceRow } from "./types";
 
 export { CACHE_TTL_MS, FRESH_COOLDOWN_MS };
@@ -24,61 +33,37 @@ type MemoryStore = {
 
 declare global {
   // Persist across hot reloads in Next.js dev
-  // eslint-disable-next-line no-var
-  var __flipperPriceCache: MemoryStore | undefined;
-  // eslint-disable-next-line no-var
-  var __flipperCraftPriceCache: MemoryStore | undefined;
-  // eslint-disable-next-line no-var
   var __flipperRefinePriceCache: MemoryStore | undefined;
-  // eslint-disable-next-line no-var
-  var __flipperUpgradePriceCache: MemoryStore | undefined;
 }
 
-function storeFor(
-  kind: "flips" | "craft" | "refine" | "upgrade",
-): MemoryStore {
-  if (kind === "craft") {
-    if (!globalThis.__flipperCraftPriceCache) {
-      globalThis.__flipperCraftPriceCache = { entry: null, inflight: null };
-    }
-    return globalThis.__flipperCraftPriceCache;
+function refineStore(): MemoryStore {
+  if (!globalThis.__flipperRefinePriceCache) {
+    globalThis.__flipperRefinePriceCache = { entry: null, inflight: null };
   }
-  if (kind === "refine") {
-    if (!globalThis.__flipperRefinePriceCache) {
-      globalThis.__flipperRefinePriceCache = { entry: null, inflight: null };
-    }
-    return globalThis.__flipperRefinePriceCache;
-  }
-  if (kind === "upgrade") {
-    if (!globalThis.__flipperUpgradePriceCache) {
-      globalThis.__flipperUpgradePriceCache = { entry: null, inflight: null };
-    }
-    return globalThis.__flipperUpgradePriceCache;
-  }
-  if (!globalThis.__flipperPriceCache) {
-    globalThis.__flipperPriceCache = { entry: null, inflight: null };
-  }
-  return globalThis.__flipperPriceCache;
+  return globalThis.__flipperRefinePriceCache;
 }
 
 function isFresh(entry: CacheEntry, now: number): boolean {
   return entry.schemaVersion === CACHE_SCHEMA_VERSION && now < entry.expiresAt;
 }
 
+/** Clears shared city+BM store (flips + craft + upgrade city pack). */
 export function invalidate(): void {
-  storeFor("flips").entry = null;
+  clearCityBmPriceStore();
 }
 
+/** Alias of invalidate — craft uses the same city+BM slice. */
 export function invalidateCraft(): void {
-  storeFor("craft").entry = null;
+  clearCityBmPriceStore();
 }
 
 export function invalidateRefine(): void {
-  storeFor("refine").entry = null;
+  refineStore().entry = null;
 }
 
+/** Clears Brecilien upgrade slice (city+BM remains shared). */
 export function invalidateUpgrade(): void {
-  storeFor("upgrade").entry = null;
+  clearBrecilienPriceStore();
 }
 
 export function getCacheMeta(now: number = Date.now()): {
@@ -87,25 +72,21 @@ export function getCacheMeta(now: number = Date.now()): {
   expiresAt: number | null;
   ageMs: number | null;
 } {
-  const entry = storeFor("flips").entry;
-  if (!entry) {
-    return { hasEntry: false, fetchedAt: null, expiresAt: null, ageMs: null };
-  }
+  const meta = getCityBmStoreMeta(now);
   return {
-    hasEntry: true,
-    fetchedAt: entry.fetchedAt,
-    expiresAt: entry.expiresAt,
-    ageMs: now - entry.fetchedAt,
+    hasEntry: meta.hasEntry,
+    fetchedAt: meta.fetchedAt,
+    expiresAt: meta.expiresAt,
+    ageMs: meta.ageMs,
   };
 }
 
-async function getOrFetch(
-  kind: "flips" | "craft" | "refine" | "upgrade",
+async function getOrFetchRefine(
   fetcher: () => Promise<AodpPriceRow[]>,
   options: { fresh?: boolean; now?: number } = {},
 ): Promise<CacheResult> {
   const now = options.now ?? Date.now();
-  const s = storeFor(kind);
+  const s = refineStore();
   const wantFresh = options.fresh === true;
 
   if (s.entry && isFresh(s.entry, now)) {
@@ -158,22 +139,27 @@ async function getOrFetch(
 }
 
 /**
- * Get Europe prices from memory cache or fetcher (BM city flips).
- * `fresh=true` only forces a re-fetch after FRESH_COOLDOWN_MS since last successful fetch.
+ * Shared city+BM prices for BM flips.
+ * Fetches only missing item ids; `fresh=true` clears the slice after cooldown.
  */
 export async function getOrFetchPrices(
-  fetcher: () => Promise<AodpPriceRow[]>,
+  itemIds: string[],
+  fetchMissing: FetchMissing,
   options: { fresh?: boolean; now?: number } = {},
 ): Promise<CacheResult> {
-  return getOrFetch("flips", fetcher, options);
+  return ensureCityBmPrices(itemIds, fetchMissing, options);
 }
 
-/** Separate cache for Caerleon + BM craft price payloads. */
+/**
+ * Shared city+BM prices for craft (same slice as flips).
+ * Fetches only missing item ids.
+ */
 export async function getOrFetchCraftPrices(
-  fetcher: () => Promise<AodpPriceRow[]>,
+  itemIds: string[],
+  fetchMissing: FetchMissing,
   options: { fresh?: boolean; now?: number } = {},
 ): Promise<CacheResult> {
-  return getOrFetch("craft", fetcher, options);
+  return ensureCityBmPrices(itemIds, fetchMissing, options);
 }
 
 /** Separate cache for refine (raw + refined) city market prices. */
@@ -181,21 +167,38 @@ export async function getOrFetchRefinePrices(
   fetcher: () => Promise<AodpPriceRow[]>,
   options: { fresh?: boolean; now?: number } = {},
 ): Promise<CacheResult> {
-  return getOrFetch("refine", fetcher, options);
+  return getOrFetchRefine(fetcher, options);
 }
 
-/** Separate cache for upgrade (enchant) city + BM prices. */
+export type UpgradeFetchers = {
+  fetchCityBm: FetchMissing;
+  fetchBrecilien: FetchMissing;
+};
+
+/**
+ * Upgrade prices: shared city+BM slice + dedicated Brecilien slice.
+ * Merged rows are equivalent to a single UPGRADE_LOCATIONS fetch.
+ */
 export async function getOrFetchUpgradePrices(
-  fetcher: () => Promise<AodpPriceRow[]>,
+  itemIds: string[],
+  fetchers: UpgradeFetchers,
   options: { fresh?: boolean; now?: number } = {},
 ): Promise<CacheResult> {
-  return getOrFetch("upgrade", fetcher, options);
+  const [cityBm, brec] = await Promise.all([
+    ensureCityBmPrices(itemIds, fetchers.fetchCityBm, options),
+    ensureBrecilienPrices(itemIds, fetchers.fetchBrecilien, options),
+  ]);
+
+  return {
+    data: [...cityBm.data, ...brec.data],
+    cacheHit: cityBm.cacheHit && brec.cacheHit,
+    fetchedAt: Math.min(cityBm.fetchedAt, brec.fetchedAt),
+    expiresAt: Math.min(cityBm.expiresAt, brec.expiresAt),
+  };
 }
 
 /** Test helper — reset store between unit checks. */
 export function __resetCacheForTests(): void {
-  globalThis.__flipperPriceCache = { entry: null, inflight: null };
-  globalThis.__flipperCraftPriceCache = { entry: null, inflight: null };
+  __resetPriceStoresForTests();
   globalThis.__flipperRefinePriceCache = { entry: null, inflight: null };
-  globalThis.__flipperUpgradePriceCache = { entry: null, inflight: null };
 }
