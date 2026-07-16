@@ -1,6 +1,7 @@
 import { fetchRefinePrices } from "@/lib/aodp";
 import { upstreamErrorResponse } from "@/lib/apiErrors";
 import { getOrFetchRefinePrices } from "@/lib/cache";
+import { pricesCacheControlHeader } from "@/lib/constants";
 import { refinePriceItemIds } from "@/lib/refineFlips";
 import type { RefineFlipsResponse } from "@/lib/types";
 import { NextRequest, NextResponse } from "next/server";
@@ -27,7 +28,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(body, {
       headers: {
-        "Cache-Control": "public, s-maxage=240, stale-while-revalidate=30",
+        "Cache-Control": pricesCacheControlHeader(),
       },
     });
   } catch (err) {

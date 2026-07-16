@@ -1,6 +1,7 @@
 import { fetchBrecilienPrices, fetchCityBmPrices } from "@/lib/aodp";
 import { upstreamErrorResponse } from "@/lib/apiErrors";
 import { getOrFetchUpgradePrices } from "@/lib/cache";
+import { pricesCacheControlHeader } from "@/lib/constants";
 import { upgradePriceItemIds } from "@/lib/upgradeFlips";
 import type { UpgradeFlipsResponse } from "@/lib/types";
 import { NextRequest, NextResponse } from "next/server";
@@ -31,7 +32,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(body, {
       headers: {
-        "Cache-Control": "public, s-maxage=240, stale-while-revalidate=30",
+        "Cache-Control": pricesCacheControlHeader(),
       },
     });
   } catch (err) {

@@ -3,8 +3,8 @@
  * Used as baseline (step 0) and later vs shared price store.
  *
  * Cache invariants (runtime, lib/cache.ts):
- * - TTL: CACHE_TTL_MS = 240_000 (4 min)
- * - fresh cooldown: FRESH_COOLDOWN_MS = 60_000
+ * - TTL: CACHE_TTL_MS = 600_000 (10 min)
+ * - fresh cooldown: FRESH_COOLDOWN_MS = 300_000
  * - refine stays on its own cache slice (not shared city+BM)
  *
  * Usage: npx tsx scripts/audit-price-parity.ts

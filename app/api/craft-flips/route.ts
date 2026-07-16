@@ -1,6 +1,7 @@
 import { fetchCraftPrices } from "@/lib/aodp";
 import { upstreamErrorResponse } from "@/lib/apiErrors";
 import { getOrFetchCraftPrices } from "@/lib/cache";
+import { pricesCacheControlHeader } from "@/lib/constants";
 import { buildCraftFlipsByMode, craftPriceItemIds } from "@/lib/craftFlips";
 import type { CraftFlipsResponse } from "@/lib/types";
 import { NextRequest, NextResponse } from "next/server";
@@ -28,7 +29,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(body, {
       headers: {
-        "Cache-Control": "public, s-maxage=240, stale-while-revalidate=30",
+        "Cache-Control": pricesCacheControlHeader(),
       },
     });
   } catch (err) {

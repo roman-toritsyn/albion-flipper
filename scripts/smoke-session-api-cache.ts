@@ -10,6 +10,7 @@ import {
   SESSION_API,
   writeSessionApiCache,
 } from "../lib/sessionApiCache";
+import { CACHE_TTL_MS } from "../lib/constants";
 
 function assert(cond: boolean, msg: string): void {
   if (!cond) throw new Error(msg);
@@ -18,7 +19,7 @@ function assert(cond: boolean, msg: string): void {
 clearSessionApiCacheForTests();
 
 const now = 1_700_000_000_000;
-const expiresAt = now + 240_000;
+const expiresAt = now + CACHE_TTL_MS;
 
 writeSessionApiCache(SESSION_API.flips, {
   flips: [{ id: "a" }],

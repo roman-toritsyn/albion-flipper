@@ -1,6 +1,7 @@
 import { fetchEuropePrices } from "@/lib/aodp";
 import { upstreamErrorResponse } from "@/lib/apiErrors";
 import { getOrFetchPrices } from "@/lib/cache";
+import { pricesCacheControlHeader } from "@/lib/constants";
 import { buildFlips } from "@/lib/flips";
 import { ITEM_IDS } from "@/lib/items";
 import type { FlipsResponse } from "@/lib/types";
@@ -27,7 +28,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(body, {
       headers: {
-        "Cache-Control": "public, s-maxage=240, stale-while-revalidate=30",
+        "Cache-Control": pricesCacheControlHeader(),
       },
     });
   } catch (err) {
