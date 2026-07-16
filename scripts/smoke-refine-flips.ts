@@ -9,6 +9,11 @@ import {
   type RefineRecipe,
 } from "../lib/refineFlips";
 import { resourceReturnRate, specialtyCityFor } from "../lib/refineRates";
+import {
+  refineItemValue,
+  refineNutrition,
+  refineStationFee,
+} from "../lib/refineStationFee";
 import type { AodpPriceRow } from "../lib/types";
 
 function assert(cond: boolean, msg: string): void {
@@ -67,6 +72,22 @@ assert(
 );
 
 {
+  // Station fee: nutrition × (usageFee / 100); T2 free.
+  assert(refineItemValue(4, 0) === 16, "IV T4.0");
+  assert(refineItemValue(5, 0) === 32, "IV T5.0");
+  assert(refineItemValue(5, 2) === 128, "IV T5.2");
+  assert(refineItemValue(8, 3) === 2048, "IV T8.3");
+  assert(refineItemValue(2, 0) === 0, "IV T2 free");
+  assert(Math.abs(refineNutrition(4, 0) - 1.8) < 1e-9, "nutrition T4");
+  assert(Math.abs(refineStationFee(4, 0, 1000) - 18) < 1e-9, "fee T4@1000");
+  assert(Math.abs(refineStationFee(5, 0, 1000) - 36) < 1e-9, "fee T5@1000");
+  assert(Math.abs(refineStationFee(5, 2, 1000) - 144) < 1e-9, "fee T5.2@1000");
+  assert(Math.abs(refineStationFee(8, 3, 1000) - 2304) < 1e-9, "fee T8.3@1000");
+  assert(refineStationFee(2, 0, 9999) === 0, "fee T2 zero");
+  assert(refineStationFee(5, 0, 0) === 0, "fee zero usage");
+}
+
+{
   const recipe: RefineRecipe = {
     outputId: "T5_METALBAR",
     enchant: 0,
@@ -92,7 +113,37 @@ assert(
   assert(!!manual, "manual result");
   assert(manual!.grossCost === 800, `manual gross ${manual!.grossCost}`);
   assert(manual!.complete, "manual complete");
+  assert(manual!.stationFee === 0, "manual fee default 0");
   assert(manual!.profit === refineProfit(1000, manual!.effectiveCost, 0.04), "manual profit");
+
+  const withFee = calcManualRefine({
+    recipe,
+    unitPrices: { T5_ORE: 100, T4_METALBAR: 500 },
+    sellPrice: 1000,
+    useFocus: false,
+    dailyBonus: 0,
+    taxRate: 0.04,
+    stationFeePer100: 1000,
+  });
+  assert(!!withFee, "manual fee result");
+  assert(Math.abs(withFee!.stationFee - 36) < 1e-9, `manual fee ${withFee!.stationFee}`);
+  assert(
+    Math.abs(withFee!.profit - (manual!.profit - 36)) < 1e-6,
+    "manual profit minus fee",
+  );
+  // RRR scales mats only — fee stays fixed
+  const focusedFee = calcManualRefine({
+    recipe,
+    unitPrices: { T5_ORE: 100, T4_METALBAR: 500 },
+    sellPrice: 1000,
+    useFocus: true,
+    dailyBonus: 0,
+    taxRate: 0.04,
+    stationFeePer100: 1000,
+  });
+  assert(!!focusedFee, "focused fee");
+  assert(Math.abs(focusedFee!.stationFee - 36) < 1e-9, "fee ignore RRR");
+  assert(focusedFee!.effectiveCost < withFee!.effectiveCost, "focus mats cheaper");
 }
 
 const recipe: RefineRecipe = {
@@ -130,12 +181,36 @@ const rows: AodpPriceRow[] = [
   assert(f.grossCost === 770, `gross ${f.grossCost}`);
   assert(f.refineCity === "Thetford", "refine city");
   assert(Math.abs(f.effectiveCost - 770 * (1 - f.rrr)) < 1e-6, "effective");
+  assert(f.stationFee === 0, "default station fee 0");
   // sell prefers refine city (Thetford) when quote exists — none here → fall back best
   // Caerleon ignored for refine → Bridgewatch bid 900
   assert(f.revenue === 900, `revenue ${f.revenue}`);
   assert(f.revenueCity === "Bridgewatch", "sell city fallback");
   const p = refineProfit(f.revenue, f.effectiveCost, 0.04);
   assert(Number.isFinite(p), "profit");
+}
+
+{
+  const withFee = buildRefineFlips(rows, [recipe], {
+    buySide: "instant",
+    sellSide: "instant",
+    useFocus: false,
+    stationFeePer100: 1000,
+  })[0];
+  const noFee = buildRefineFlips(rows, [recipe], {
+    buySide: "instant",
+    sellSide: "instant",
+    useFocus: false,
+    stationFeePer100: 0,
+  })[0];
+  assert(Math.abs(withFee.stationFee - 36) < 1e-9, `flip fee ${withFee.stationFee}`);
+  assert(
+    Math.abs(
+      refineProfit(withFee.revenue, withFee.effectiveCost, 0.04, withFee.stationFee) -
+        (refineProfit(noFee.revenue, noFee.effectiveCost, 0.04) - 36),
+    ) < 1e-6,
+    "flip profit accounts for fee",
+  );
 }
 
 {
@@ -239,6 +314,7 @@ const rows: AodpPriceRow[] = [
     buySide: "instant",
     sellSide: "order",
     useFocus: true,
+    stationFeePer100: 1000,
   });
   assert(flips.length === 1, "enchanted flip");
   assert(flips[0].revenue === 50000, `ench revenue ${flips[0].revenue}`);
@@ -246,6 +322,8 @@ const rows: AodpPriceRow[] = [
     flips[0].ingredients.every((i) => i.unitPrice > 0),
     "ench ingredients",
   );
+  // T8.2: 16 * 2^(8-4) * 2^2 = 16 * 16 * 4 = 1024 IV → fee = 1024 * 1.125 = 1152
+  assert(Math.abs(flips[0].stationFee - 1152) < 1e-6, `ench fee ${flips[0].stationFee}`);
 }
 
 {

@@ -71,6 +71,12 @@ export const LOCALE_EXTRAS: Record<LocaleExtraId, Partial<Messages>> = {
     dailyBonus: "Tagesbonus",
     dailyBonusOff: "Aus",
     dailyBonusPct: "+{n}%",
+    stationFeePer100: "Stationsgebühr / 100 Ern.",
+    stationFeeHint:
+      "Nutzungsgebühr im Spiel: Silber pro 100 Ernährung. Jeder Craft zahlt anteilig nach Item Value.",
+    stationFee: "Stationsgebühr",
+    nutritionLabel: "{n} Ernährung",
+    nutritionAbbrev: "Ernährung",
     refineManualTitle: "Manuelle Rechnung",
     refineManualHint:
       "Rezept wählen, Preise eingeben — Profit mit aktuellen RRR-Einstellungen.",
@@ -158,6 +164,12 @@ export const LOCALE_EXTRAS: Record<LocaleExtraId, Partial<Messages>> = {
     dailyBonus: "Bonus journalier",
     dailyBonusOff: "Off",
     dailyBonusPct: "+{n}%",
+    stationFeePer100: "Frais station / 100 nutr.",
+    stationFeeHint:
+      "Frais d'usage en jeu : argent pour 100 nutrition. Chaque craft paie selon sa Item Value.",
+    stationFee: "Frais de station",
+    nutritionLabel: "{n} nutrition",
+    nutritionAbbrev: "Nutrition",
     refineManualTitle: "Calcul manuel",
     refineManualHint:
       "Choisis une recette, entre tes prix — profit avec le RRR actuel.",
@@ -245,6 +257,12 @@ export const LOCALE_EXTRAS: Record<LocaleExtraId, Partial<Messages>> = {
     dailyBonus: "Дневной бонус",
     dailyBonusOff: "Выкл",
     dailyBonusPct: "+{n}%",
+    stationFeePer100: "Плата станка / 100 пит.",
+    stationFeeHint:
+      "Usage Fee в игре: серебро за 100 питания. Каждый крафт платит долю по Item Value.",
+    stationFee: "Плата за станок",
+    nutritionLabel: "{n} питания",
+    nutritionAbbrev: "Питание",
     refineManualTitle: "Ручной расчёт",
     refineManualHint:
       "Выбери ресурс, введи свои цены — профит с текущими RRR, фокусом и дневным бонусом.",
@@ -332,6 +350,12 @@ export const LOCALE_EXTRAS: Record<LocaleExtraId, Partial<Messages>> = {
     dailyBonus: "Bonus dzienny",
     dailyBonusOff: "Wył",
     dailyBonusPct: "+{n}%",
+    stationFeePer100: "Opłata stacji / 100 żyw.",
+    stationFeeHint:
+      "Usage Fee w grze: srebro za 100 żywności. Każdy craft płaci udział wg Item Value.",
+    stationFee: "Opłata stacji",
+    nutritionLabel: "{n} żywności",
+    nutritionAbbrev: "Żywność",
     refineManualTitle: "Ręczne wyliczenie",
     refineManualHint:
       "Wybierz przepis, wpisz ceny — zysk z bieżącym RRR.",
@@ -419,6 +443,12 @@ export const LOCALE_EXTRAS: Record<LocaleExtraId, Partial<Messages>> = {
     dailyBonus: "Bonus diario",
     dailyBonusOff: "Off",
     dailyBonusPct: "+{n}%",
+    stationFeePer100: "Tasa estación / 100 nutr.",
+    stationFeeHint:
+      "Usage Fee en juego: plata por 100 nutrición. Cada craft paga según Item Value.",
+    stationFee: "Tasa de estación",
+    nutritionLabel: "{n} nutrición",
+    nutritionAbbrev: "Nutrición",
     refineManualTitle: "Cálculo manual",
     refineManualHint:
       "Elige una receta, introduce tus precios — beneficio con el RRR actual.",
@@ -506,6 +536,12 @@ export const LOCALE_EXTRAS: Record<LocaleExtraId, Partial<Messages>> = {
     dailyBonus: "Bónus diário",
     dailyBonusOff: "Off",
     dailyBonusPct: "+{n}%",
+    stationFeePer100: "Taxa estação / 100 nutr.",
+    stationFeeHint:
+      "Usage Fee no jogo: prata por 100 nutrição. Cada craft paga conforme Item Value.",
+    stationFee: "Taxa da estação",
+    nutritionLabel: "{n} nutrição",
+    nutritionAbbrev: "Nutrição",
     refineManualTitle: "Cálculo manual",
     refineManualHint:
       "Escolhe uma receita, introduz os preços — lucro com o RRR atual.",
@@ -593,6 +629,12 @@ export const LOCALE_EXTRAS: Record<LocaleExtraId, Partial<Messages>> = {
     dailyBonus: "Bonus giornaliero",
     dailyBonusOff: "Off",
     dailyBonusPct: "+{n}%",
+    stationFeePer100: "Tassa stazione / 100 nutr.",
+    stationFeeHint:
+      "Usage Fee nel gioco: argento per 100 nutrizione. Ogni craft paga in base all'Item Value.",
+    stationFee: "Tassa stazione",
+    nutritionLabel: "{n} nutrizione",
+    nutritionAbbrev: "Nutrizione",
     refineManualTitle: "Calcolo manuale",
     refineManualHint:
       "Scegli una ricetta, inserisci i prezzi — profitto con RRR attuale.",
@@ -678,6 +720,12 @@ export const LOCALE_EXTRAS: Record<LocaleExtraId, Partial<Messages>> = {
     dailyBonus: "日常加成",
     dailyBonusOff: "关",
     dailyBonusPct: "+{n}%",
+    stationFeePer100: "工坊费 / 100营养",
+    stationFeeHint:
+      "游戏内使用费：每100营养的银币。每次制作按物品价值分摊。",
+    stationFee: "工坊费",
+    nutritionLabel: "{n} 营养",
+    nutritionAbbrev: "营养",
     refineManualTitle: "手动计算",
     refineManualHint: "选择配方，输入价格 — 按当前 RRR 看利润。",
     refineManualRecipe: "资源",
@@ -762,6 +810,12 @@ export const LOCALE_EXTRAS: Record<LocaleExtraId, Partial<Messages>> = {
     dailyBonus: "日常加成",
     dailyBonusOff: "關",
     dailyBonusPct: "+{n}%",
+    stationFeePer100: "工坊費 / 100營養",
+    stationFeeHint:
+      "遊戲內使用費：每100營養的銀幣。每次製作依物品價值分攤。",
+    stationFee: "工坊費",
+    nutritionLabel: "{n} 營養",
+    nutritionAbbrev: "營養",
     refineManualTitle: "手動計算",
     refineManualHint: "選擇配方，輸入價格 — 依目前 RRR 看利潤。",
     refineManualRecipe: "資源",
@@ -847,6 +901,12 @@ export const LOCALE_EXTRAS: Record<LocaleExtraId, Partial<Messages>> = {
     dailyBonus: "일일 보너스",
     dailyBonusOff: "끔",
     dailyBonusPct: "+{n}%",
+    stationFeePer100: "작업대 요금 / 100영양",
+    stationFeeHint:
+      "게임 내 사용료: 영양 100당 은화. 각 제작은 아이템 가치에 따라 분담.",
+    stationFee: "작업대 요금",
+    nutritionLabel: "{n} 영양",
+    nutritionAbbrev: "영양",
     refineManualTitle: "수동 계산",
     refineManualHint: "레시피 선택 후 가격 입력 — 현재 RRR로 수익 확인.",
     refineManualRecipe: "자원",
@@ -932,6 +992,12 @@ export const LOCALE_EXTRAS: Record<LocaleExtraId, Partial<Messages>> = {
     dailyBonus: "日間ボーナス",
     dailyBonusOff: "オフ",
     dailyBonusPct: "+{n}%",
+    stationFeePer100: "ステーション料 / 100栄養",
+    stationFeeHint:
+      "ゲーム内使用料：栄養100あたりの銀貨。各クラフトはItem Valueに応じて支払う。",
+    stationFee: "ステーション料",
+    nutritionLabel: "{n} 栄養",
+    nutritionAbbrev: "栄養",
     refineManualTitle: "手動計算",
     refineManualHint: "レシピを選び価格を入力 — 現在のRRRで利益を表示。",
     refineManualRecipe: "資源",
@@ -1018,6 +1084,12 @@ export const LOCALE_EXTRAS: Record<LocaleExtraId, Partial<Messages>> = {
     dailyBonus: "Bonus harian",
     dailyBonusOff: "Mati",
     dailyBonusPct: "+{n}%",
+    stationFeePer100: "Biaya stasiun / 100 nutr.",
+    stationFeeHint:
+      "Usage Fee di game: silver per 100 nutrisi. Setiap craft membayar sesuai Item Value.",
+    stationFee: "Biaya stasiun",
+    nutritionLabel: "{n} nutrisi",
+    nutritionAbbrev: "Nutrisi",
     refineManualTitle: "Hitung manual",
     refineManualHint:
       "Pilih resep, masukkan harga — profit dengan RRR saat ini.",
@@ -1105,6 +1177,12 @@ export const LOCALE_EXTRAS: Record<LocaleExtraId, Partial<Messages>> = {
     dailyBonus: "Günlük bonus",
     dailyBonusOff: "Kapalı",
     dailyBonusPct: "+{n}%",
+    stationFeePer100: "İstasyon ücreti / 100 bes.",
+    stationFeeHint:
+      "Oyundaki kullanım ücreti: 100 beslenme başına gümüş. Her craft Item Value'ye göre öder.",
+    stationFee: "İstasyon ücreti",
+    nutritionLabel: "{n} beslenme",
+    nutritionAbbrev: "Beslenme",
     refineManualTitle: "Manuel hesap",
     refineManualHint:
       "Tarif seç, fiyatları gir — güncel RRR ile kâr.",
@@ -1191,6 +1269,12 @@ export const LOCALE_EXTRAS: Record<LocaleExtraId, Partial<Messages>> = {
     dailyBonus: "مكافأة يومية",
     dailyBonusOff: "إيقاف",
     dailyBonusPct: "+{n}%",
+    stationFeePer100: "رسوم المحطة / 100 تغذية",
+    stationFeeHint:
+      "رسوم الاستخدام في اللعبة: فضة لكل 100 تغذية. كل حرفة تدفع حسب قيمة العنصر.",
+    stationFee: "رسوم المحطة",
+    nutritionLabel: "{n} تغذية",
+    nutritionAbbrev: "تغذية",
     refineManualTitle: "حساب يدوي",
     refineManualHint: "اختر وصفة وأدخل أسعارك — الربح بـ RRR الحالي.",
     refineManualRecipe: "مورد",

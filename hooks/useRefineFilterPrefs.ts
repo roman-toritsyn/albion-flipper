@@ -20,6 +20,7 @@ export type UseRefineFilterPrefsResult = RefineFilterPrefs & {
   setUseFocus: (v: boolean) => void;
   setDailyBonus: (v: DailyProductionBonus) => void;
   setRefineCity: (v: RefineCityPreference) => void;
+  setStationFeePer100: (v: number) => void;
 };
 
 export function useRefineFilterPrefs(): UseRefineFilterPrefsResult {
@@ -57,6 +58,18 @@ export function useRefineFilterPrefs(): UseRefineFilterPrefsResult {
     (refineCity: RefineCityPreference) => patch({ refineCity }),
     [patch],
   );
+  const setStationFeePer100 = useCallback(
+    (stationFeePer100: number) =>
+      patch({
+        stationFeePer100:
+          Number.isFinite(stationFeePer100) &&
+          stationFeePer100 >= 0 &&
+          Number.isInteger(stationFeePer100)
+            ? stationFeePer100
+            : 0,
+      }),
+    [patch],
+  );
 
   return {
     ...prefs,
@@ -68,5 +81,6 @@ export function useRefineFilterPrefs(): UseRefineFilterPrefsResult {
     setUseFocus,
     setDailyBonus,
     setRefineCity,
+    setStationFeePer100,
   };
 }

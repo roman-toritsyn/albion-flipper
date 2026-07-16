@@ -25,8 +25,8 @@ export function RefineRow({ flip, taxRate, index = 0, now = Date.now() }: Props)
   const { t, itemLang } = useLocale();
   const [open, setOpen] = useState(false);
   const displayName = itemDisplayName(flip.outputId, itemLang);
-  const profit = refineProfit(flip.revenue, flip.effectiveCost, taxRate);
-  const roi = refineRoi(flip.revenue, flip.effectiveCost, taxRate);
+  const profit = refineProfit(flip.revenue, flip.effectiveCost, taxRate, flip.stationFee);
+  const roi = refineRoi(flip.revenue, flip.effectiveCost, taxRate, flip.stationFee);
   const net = refineNet(flip.revenue, taxRate);
 
   return (
@@ -101,6 +101,9 @@ export function RefineRow({ flip, taxRate, index = 0, now = Date.now() }: Props)
             </p>
             <p className="text-[11px] text-muted">
               {t("refineGrossCost")} {formatSilver(flip.grossCost)}
+              {flip.stationFee > 0
+                ? ` · ${t("stationFee")} ${formatSilver(flip.stationFee)}`
+                : ""}
             </p>
           </div>
 
@@ -192,6 +195,9 @@ export function RefineRow({ flip, taxRate, index = 0, now = Date.now() }: Props)
               refine: flip.refineCity,
               sell: flip.revenueCity,
             })}
+            {flip.nutrition > 0 || flip.stationFee > 0
+              ? ` · ${t("nutritionLabel", { n: flip.nutrition.toFixed(2) })} · ${t("stationFee")} ${formatSilver(flip.stationFee)}`
+              : ""}
           </div>
         </div>
       )}

@@ -34,6 +34,7 @@ export function RefineDashboard() {
     useFocus,
     dailyBonus,
     refineCity,
+    stationFeePer100,
     setTaxRate,
     setMaxAge,
     setFamilyFilter,
@@ -42,6 +43,7 @@ export function RefineDashboard() {
     setUseFocus,
     setDailyBonus,
     setRefineCity,
+    setStationFeePer100,
   } = useRefineFilterPrefs();
 
   const [rows, setRows] = useState<AodpPriceRow[]>([]);
@@ -108,8 +110,19 @@ export function RefineDashboard() {
       refineCity,
       maxAgeMinutes: maxAge,
       nowMs: now,
+      stationFeePer100,
     });
-  }, [rows, buySide, sellSide, useFocus, dailyBonus, refineCity, maxAge, now]);
+  }, [
+    rows,
+    buySide,
+    sellSide,
+    useFocus,
+    dailyBonus,
+    refineCity,
+    maxAge,
+    now,
+    stationFeePer100,
+  ]);
 
   const visible = useMemo(() => {
     return flips
@@ -118,13 +131,13 @@ export function RefineDashboard() {
         if (!isFresh(f.revenueDate, maxAge, now)) return false;
         if (f.ingredients.some((ing) => !isFresh(ing.date, maxAge, now))) return false;
         // Hide dead routes — refine list is for opportunities, not dump-loss noise.
-        const p = refineProfit(f.revenue, f.effectiveCost, taxRate);
+        const p = refineProfit(f.revenue, f.effectiveCost, taxRate, f.stationFee);
         if (p < 0) return false;
         return true;
       })
       .sort((a, b) => {
-        const pa = refineProfit(a.revenue, a.effectiveCost, taxRate);
-        const pb = refineProfit(b.revenue, b.effectiveCost, taxRate);
+        const pa = refineProfit(a.revenue, a.effectiveCost, taxRate, a.stationFee);
+        const pb = refineProfit(b.revenue, b.effectiveCost, taxRate, b.stationFee);
         if (pb !== pa) return pb - pa;
         return b.tier - a.tier;
       });
@@ -345,6 +358,23 @@ export function RefineDashboard() {
           </select>
         </label>
         <label className="flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-2">
+          <span className="text-muted" title={t("stationFeeHint")}>
+            {t("stationFeePer100")}
+          </span>
+          <input
+            type="text"
+            inputMode="numeric"
+            autoComplete="off"
+            value={stationFeePer100 === 0 ? "" : String(stationFeePer100)}
+            placeholder="0"
+            onChange={(e) => {
+              const digits = e.target.value.replace(/\D/g, "");
+              setStationFeePer100(digits === "" ? 0 : Number(digits));
+            }}
+            className="w-24 bg-transparent font-[family-name:var(--font-mono)] tabular text-text outline-none placeholder:text-muted"
+          />
+        </label>
+        <label className="flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-2">
           <span className="text-muted">{t("dataAge")}</span>
           <select
             value={maxAge}
@@ -370,6 +400,7 @@ export function RefineDashboard() {
         buySide={buySide}
         sellSide={sellSide}
         maxAge={maxAge}
+        stationFeePer100={stationFeePer100}
       />
 
       <section className="flex flex-col gap-2">
@@ -403,7 +434,7 @@ export function RefineDashboard() {
           !error &&
           visible.map((flip, i) => (
             <RefineRow
-              key={`${flip.outputId}-${flip.refineCity}-${flip.buySide}-${flip.sellSide}-${flip.effectiveCost}`}
+              key={`${flip.outputId}-${flip.refineCity}-${flip.buySide}-${flip.sellSide}-${flip.effectiveCost}-${flip.stationFee}`}
               flip={flip}
               taxRate={taxRate}
               index={i}

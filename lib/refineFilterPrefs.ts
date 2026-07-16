@@ -3,8 +3,8 @@ import { REFINE_CITIES } from "@/lib/types";
 import type { DailyProductionBonus, MarketSide, RefineFamily } from "@/lib/refineFlips";
 
 export const REFINE_STORAGE_KEY = "flipper-refine-filters";
-/** v4: daily production bonus toggle. */
-export const REFINE_FILTER_PREFS_VERSION = 4;
+/** v5: station usage fee (silver per 100 nutrition). */
+export const REFINE_FILTER_PREFS_VERSION = 5;
 
 const ALLOWED_MAX_AGES = [60, 180, 360, 720, 1440, 2880] as const;
 const ALLOWED_TAX_RATES = [0.04, 0.08] as const;
@@ -30,6 +30,8 @@ export type RefineFilterPrefs = {
   useFocus: boolean;
   dailyBonus: DailyProductionBonus;
   refineCity: RefineCityPreference;
+  /** Silver per 100 nutrition (in-game station usage fee). */
+  stationFeePer100: number;
 };
 
 export const DEFAULT_REFINE_FILTER_PREFS: RefineFilterPrefs = {
@@ -43,6 +45,7 @@ export const DEFAULT_REFINE_FILTER_PREFS: RefineFilterPrefs = {
   useFocus: true,
   dailyBonus: 0,
   refineCity: "auto",
+  stationFeePer100: 0,
 };
 
 type StoredPayload = { v?: number } & Partial<RefineFilterPrefs>;
@@ -71,6 +74,10 @@ function isMaxAge(v: unknown): v is number {
   return typeof v === "number" && (ALLOWED_MAX_AGES as readonly number[]).includes(v);
 }
 
+function isStationFeePer100(v: unknown): v is number {
+  return typeof v === "number" && Number.isFinite(v) && v >= 0 && Number.isInteger(v);
+}
+
 function parsePartial(raw: StoredPayload): RefineFilterPrefs {
   return {
     taxRate: isTaxRate(raw.taxRate) ? raw.taxRate : DEFAULT_REFINE_FILTER_PREFS.taxRate,
@@ -87,6 +94,9 @@ function parsePartial(raw: StoredPayload): RefineFilterPrefs {
     refineCity: isRefineCity(raw.refineCity)
       ? raw.refineCity
       : DEFAULT_REFINE_FILTER_PREFS.refineCity,
+    stationFeePer100: isStationFeePer100(raw.stationFeePer100)
+      ? raw.stationFeePer100
+      : DEFAULT_REFINE_FILTER_PREFS.stationFeePer100,
   };
 }
 
@@ -96,8 +106,12 @@ export function readStoredRefineFilterPrefs(): RefineFilterPrefs {
     const raw = window.localStorage.getItem(REFINE_STORAGE_KEY);
     if (!raw) return DEFAULT_REFINE_FILTER_PREFS;
     const parsed = JSON.parse(raw) as StoredPayload;
-    // Accept v3 (no daily) and v4 — migrate missing dailyBonus to 0.
-    if (parsed.v !== 3 && parsed.v !== REFINE_FILTER_PREFS_VERSION) {
+    // Accept v3–v5 — migrate missing fields to defaults.
+    if (
+      parsed.v !== 3 &&
+      parsed.v !== 4 &&
+      parsed.v !== REFINE_FILTER_PREFS_VERSION
+    ) {
       return DEFAULT_REFINE_FILTER_PREFS;
     }
     return parsePartial(parsed);

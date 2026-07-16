@@ -28,6 +28,7 @@ type Props = {
   sellSide: MarketSide;
   /** Same age filter as the deals list — fill must match list quotes. */
   maxAge: number;
+  stationFeePer100: number;
 };
 
 function recipeLabel(recipe: RefineRecipe, lang: DumpLang): string {
@@ -51,8 +52,10 @@ export function RefineManualCalc({
   buySide,
   sellSide,
   maxAge,
+  stationFeePer100,
 }: Props) {
   const { t, itemLang } = useLocale();
+  const [open, setOpen] = useState(true);
   const [outputId, setOutputId] = useState("");
   const [unitPrices, setUnitPrices] = useState<Record<string, string>>({});
   const [sellPrice, setSellPrice] = useState("");
@@ -89,6 +92,7 @@ export function RefineManualCalc({
       useFocus,
       dailyBonus,
       taxRate,
+      stationFeePer100,
     });
   }, [
     recipe,
@@ -99,6 +103,7 @@ export function RefineManualCalc({
     useFocus,
     dailyBonus,
     taxRate,
+    stationFeePer100,
   ]);
 
   function selectRecipe(id: string) {
@@ -106,6 +111,7 @@ export function RefineManualCalc({
     setUnitPrices({});
     setSellPrice("");
     setFillEmpty(false);
+    if (id) setOpen(true);
   }
 
   function fillFromMarket() {
@@ -119,6 +125,7 @@ export function RefineManualCalc({
       refineCity,
       maxAgeMinutes: maxAge,
       nowMs,
+      stationFeePer100,
     };
 
     // Prefer the exact quotes the deals list would use for this recipe.
@@ -156,137 +163,174 @@ export function RefineManualCalc({
 
   return (
     <section className="rounded-md border border-border bg-surface px-4 py-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls="refine-manual-body"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-start justify-between gap-3 text-left transition-colors hover:text-brass"
+      >
+        <div className="min-w-0">
           <p className="font-[family-name:var(--font-display)] text-[11px] uppercase tracking-[0.18em] text-muted">
             {t("refineManualTitle")}
           </p>
-          <p className="mt-1 text-sm text-text-dim">{t("refineManualHint")}</p>
-        </div>
-        <div className="flex flex-col items-end gap-1">
-          <button
-            type="button"
-            disabled={!recipe || rows.length === 0}
-            onClick={fillFromMarket}
-            className="rounded-md border border-border bg-bg px-3 py-1.5 text-xs text-text transition-colors hover:border-brass hover:text-brass disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            {t("refineManualFillMarket")}
-          </button>
-          {fillEmpty && (
-            <p className="max-w-xs text-right text-[11px] text-muted">
-              {t("refineManualNoMarket")}
+          {open ? (
+            <p className="mt-1 text-sm text-text-dim">{t("refineManualHint")}</p>
+          ) : recipe ? (
+            <p className="mt-1 truncate text-sm text-text-dim">
+              {recipeLabel(recipe, itemLang)}
             </p>
-          )}
+          ) : null}
         </div>
-      </div>
-
-      <label className="mt-4 flex flex-col items-start gap-1.5 text-sm">
-        <span className="text-muted">{t("refineManualRecipe")}</span>
-        <select
-          value={outputId}
-          onChange={(e) => selectRecipe(e.target.value)}
-          className="max-w-full rounded-md border border-border bg-bg px-3 py-2 pr-8 font-[family-name:var(--font-mono)] text-text outline-none focus:border-brass"
+        <span
+          aria-hidden
+          className={`mt-0.5 shrink-0 font-[family-name:var(--font-mono)] text-sm text-muted transition-transform ${
+            open ? "rotate-180" : ""
+          }`}
         >
-          <option value="">{t("refineManualPick")}</option>
-          {recipes.map((r) => (
-            <option key={r.outputId} value={r.outputId}>
-              {recipeLabel(r, itemLang)}
-            </option>
-          ))}
-        </select>
-      </label>
+          ▾
+        </span>
+      </button>
 
-      {recipe && ingredients && (
-        <div className="mt-4 grid gap-4 lg:grid-cols-[1.2fr_1fr]">
-          <div className="flex flex-col gap-2">
-            {ingredients.map((ing) => (
-              <label
-                key={ing.itemId}
-                className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-md border border-border bg-bg px-3 py-2 text-sm"
+      {open && (
+        <div id="refine-manual-body" className="mt-4">
+          <div className="flex flex-wrap items-end justify-end gap-3">
+            <div className="flex flex-col items-end gap-1">
+              <button
+                type="button"
+                disabled={!recipe || rows.length === 0}
+                onClick={fillFromMarket}
+                className="rounded-md border border-border bg-bg px-3 py-1.5 text-xs text-text transition-colors hover:border-brass hover:text-brass disabled:cursor-not-allowed disabled:opacity-40"
               >
-                <span className="min-w-0">
-                  <span className="block truncate text-text">
-                    {ing.count}× {itemDisplayName(ing.itemId, itemLang)}
-                  </span>
-                  <span className="font-[family-name:var(--font-mono)] text-[11px] text-muted">
-                    {t("refineManualUnitPrice")}
-                  </span>
-                </span>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={unitPrices[ing.itemId] ?? ""}
-                  onChange={(e) =>
-                    setUnitPrices((prev) => ({
-                      ...prev,
-                      [ing.itemId]: e.target.value,
-                    }))
-                  }
-                  className="w-28 rounded-md border border-border bg-surface px-2 py-1.5 text-right font-[family-name:var(--font-mono)] tabular text-text outline-none focus:border-brass"
-                />
-              </label>
-            ))}
-            <label className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-md border border-brass/30 bg-bg px-3 py-2 text-sm">
-              <span className="min-w-0">
-                <span className="block truncate text-text">
-                  {itemDisplayName(recipe.outputId, itemLang)}
-                </span>
-                <span className="font-[family-name:var(--font-mono)] text-[11px] text-muted">
-                  {t("refineManualSellPrice")}
-                </span>
-              </span>
-              <input
-                type="text"
-                inputMode="decimal"
-                value={sellPrice}
-                onChange={(e) => setSellPrice(e.target.value)}
-                className="w-28 rounded-md border border-border bg-surface px-2 py-1.5 text-right font-[family-name:var(--font-mono)] tabular text-text outline-none focus:border-brass"
-              />
-            </label>
+                {t("refineManualFillMarket")}
+              </button>
+              {fillEmpty && (
+                <p className="max-w-xs text-right text-[11px] text-muted">
+                  {t("refineManualNoMarket")}
+                </p>
+              )}
+            </div>
           </div>
 
-          {result && (
-            <div className="flex flex-col justify-center gap-2 rounded-md border border-border bg-bg px-4 py-3">
-              <p className="text-[11px] text-muted">
-                {t("refineIn")} {result.refineCity} · {t("rrrAbbrev")}{" "}
-                {(result.rrr * 100).toFixed(1)}%
-                {useFocus ? ` · ${t("focusOn")}` : ""}
-                {dailyBonus > 0
-                  ? ` · ${t("dailyBonusPct", { n: dailyBonus })}`
-                  : ""}
-              </p>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-1 font-[family-name:var(--font-mono)] text-sm tabular">
-                <span className="text-muted">{t("refineGrossCost")}</span>
-                <span className="text-right text-text">
-                  {formatSilver(result.grossCost)}
-                </span>
-                <span className="text-muted">{t("refineEffectiveCost")}</span>
-                <span className="text-right text-text">
-                  {formatSilver(result.effectiveCost)}
-                </span>
-                <span className="text-muted">{t("netAbbrev")}</span>
-                <span className="text-right text-text-dim">
-                  {formatSilver(result.net)}
-                </span>
-                <span className="text-muted">{t("craftYouGet")}</span>
-                <span
-                  className={`text-right text-lg font-medium ${
-                    result.complete && result.profit >= 0
-                      ? "text-profit"
-                      : result.complete
-                        ? "text-danger"
-                        : "text-muted"
-                  }`}
-                >
-                  {result.complete ? formatSignedSilver(result.profit) : "—"}
-                </span>
-                <span className="text-muted">{t("roiAbbrev")}</span>
-                <span className="text-right text-muted">
-                  {result.complete ? formatRoi(result.roi) : "—"}
-                </span>
+          <label className="mt-4 flex flex-col items-start gap-1.5 text-sm">
+            <span className="text-muted">{t("refineManualRecipe")}</span>
+            <select
+              value={outputId}
+              onChange={(e) => selectRecipe(e.target.value)}
+              className="max-w-full rounded-md border border-border bg-bg px-3 py-2 pr-8 font-[family-name:var(--font-mono)] text-text outline-none focus:border-brass"
+            >
+              <option value="">{t("refineManualPick")}</option>
+              {recipes.map((r) => (
+                <option key={r.outputId} value={r.outputId}>
+                  {recipeLabel(r, itemLang)}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          {recipe && ingredients && (
+            <div className="mt-4 grid gap-4 lg:grid-cols-[1.2fr_1fr]">
+              <div className="flex flex-col gap-2">
+                {ingredients.map((ing) => (
+                  <label
+                    key={ing.itemId}
+                    className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-md border border-border bg-bg px-3 py-2 text-sm"
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate text-text">
+                        {ing.count}× {itemDisplayName(ing.itemId, itemLang)}
+                      </span>
+                      <span className="font-[family-name:var(--font-mono)] text-[11px] text-muted">
+                        {t("refineManualUnitPrice")}
+                      </span>
+                    </span>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={unitPrices[ing.itemId] ?? ""}
+                      onChange={(e) =>
+                        setUnitPrices((prev) => ({
+                          ...prev,
+                          [ing.itemId]: e.target.value,
+                        }))
+                      }
+                      className="w-28 rounded-md border border-border bg-surface px-2 py-1.5 text-right font-[family-name:var(--font-mono)] tabular text-text outline-none focus:border-brass"
+                    />
+                  </label>
+                ))}
+                <label className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-md border border-brass/30 bg-bg px-3 py-2 text-sm">
+                  <span className="min-w-0">
+                    <span className="block truncate text-text">
+                      {itemDisplayName(recipe.outputId, itemLang)}
+                    </span>
+                    <span className="font-[family-name:var(--font-mono)] text-[11px] text-muted">
+                      {t("refineManualSellPrice")}
+                    </span>
+                  </span>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={sellPrice}
+                    onChange={(e) => setSellPrice(e.target.value)}
+                    className="w-28 rounded-md border border-border bg-surface px-2 py-1.5 text-right font-[family-name:var(--font-mono)] tabular text-text outline-none focus:border-brass"
+                  />
+                </label>
               </div>
-              {!result.complete && (
-                <p className="text-[11px] text-muted">{t("refineManualNeedPrices")}</p>
+
+              {result && (
+                <div className="flex flex-col justify-center gap-2 rounded-md border border-border bg-bg px-4 py-3">
+                  <p className="text-[11px] text-muted">
+                    {t("refineIn")} {result.refineCity} · {t("rrrAbbrev")}{" "}
+                    {(result.rrr * 100).toFixed(1)}%
+                    {useFocus ? ` · ${t("focusOn")}` : ""}
+                    {dailyBonus > 0
+                      ? ` · ${t("dailyBonusPct", { n: dailyBonus })}`
+                      : ""}
+                  </p>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 font-[family-name:var(--font-mono)] text-sm tabular">
+                    <span className="text-muted">{t("refineGrossCost")}</span>
+                    <span className="text-right text-text">
+                      {formatSilver(result.grossCost)}
+                    </span>
+                    <span className="text-muted">{t("refineEffectiveCost")}</span>
+                    <span className="text-right text-text">
+                      {formatSilver(result.effectiveCost)}
+                    </span>
+                    <span className="text-muted">{t("stationFee")}</span>
+                    <span className="text-right text-text">
+                      {formatSilver(result.stationFee)}
+                    </span>
+                    <span className="text-muted">{t("nutritionAbbrev")}</span>
+                    <span className="text-right text-muted">
+                      {result.nutrition.toFixed(2)}
+                    </span>
+                    <span className="text-muted">{t("netAbbrev")}</span>
+                    <span className="text-right text-text-dim">
+                      {formatSilver(result.net)}
+                    </span>
+                    <span className="text-muted">{t("craftYouGet")}</span>
+                    <span
+                      className={`text-right text-lg font-medium ${
+                        result.complete && result.profit >= 0
+                          ? "text-profit"
+                          : result.complete
+                            ? "text-danger"
+                            : "text-muted"
+                      }`}
+                    >
+                      {result.complete ? formatSignedSilver(result.profit) : "—"}
+                    </span>
+                    <span className="text-muted">{t("roiAbbrev")}</span>
+                    <span className="text-right text-muted">
+                      {result.complete ? formatRoi(result.roi) : "—"}
+                    </span>
+                  </div>
+                  {!result.complete && (
+                    <p className="text-[11px] text-muted">
+                      {t("refineManualNeedPrices")}
+                    </p>
+                  )}
+                </div>
               )}
             </div>
           )}

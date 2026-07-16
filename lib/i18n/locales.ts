@@ -187,6 +187,12 @@ export const en: Messages = {
   dailyBonus: "Daily bonus",
   dailyBonusOff: "Off",
   dailyBonusPct: "+{n}%",
+  stationFeePer100: "Station fee / 100 nutr.",
+  stationFeeHint:
+    "In-game usage fee: silver per 100 nutrition. Each craft pays a share based on its Item Value.",
+  stationFee: "Station fee",
+  nutritionLabel: "{n} nutrition",
+  nutritionAbbrev: "Nutrition",
   refineManualTitle: "Manual calc",
   refineManualHint: "Pick a recipe, enter your prices, see profit with current RRR settings.",
   refineManualRecipe: "Resource",
@@ -345,6 +351,12 @@ export const uk: Messages = {
   dailyBonus: "Денний бонус",
   dailyBonusOff: "Вимк",
   dailyBonusPct: "+{n}%",
+  stationFeePer100: "Плата станку / 100 пожив.",
+  stationFeeHint:
+    "Usage Fee у грі: срібло за 100 поживності. Кожен крафт платить частку за своїм Item Value.",
+  stationFee: "Плата за станок",
+  nutritionLabel: "{n} поживності",
+  nutritionAbbrev: "Поживність",
   refineManualTitle: "Ручний розрахунок",
   refineManualHint:
     "Обери ресурс, вбий свої ціни — профіт з поточними RRR, фокусом і денним бонусом.",

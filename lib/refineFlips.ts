@@ -12,6 +12,10 @@ import {
   type DailyProductionBonus,
   type RefineFamily,
 } from "./refineRates";
+import {
+  refineNutrition,
+  refineStationFee,
+} from "./refineStationFee";
 import type { AodpPriceRow, RefineMarketCity } from "./types";
 import { REFINE_CITIES } from "./types";
 
@@ -53,6 +57,10 @@ export type RefineOpportunity = {
   grossCost: number;
   /** grossCost × (1 − RRR) */
   effectiveCost: number;
+  /** Nutrition consumed for this craft (Item Value × 0.1125). */
+  nutrition: number;
+  /** Station usage fee in silver (not reduced by RRR). */
+  stationFee: number;
   revenue: number;
   revenueCity: RefineMarketCity;
   revenueDate: string;
@@ -244,6 +252,8 @@ export type BuildRefineOptions = {
    */
   maxAgeMinutes?: number;
   nowMs?: number;
+  /** Station usage fee: silver per 100 nutrition (in-game building setting). */
+  stationFeePer100?: number;
 };
 
 function isTokenAlt(ingredients: RefineIngredient[]): boolean {
@@ -268,6 +278,7 @@ export function buildRefineFlips(
   const useFocus = options.useFocus ?? true;
   const dailyBonus = options.dailyBonus ?? 0;
   const marketOnly = options.marketOnly ?? true;
+  const stationFeePer100 = options.stationFeePer100 ?? 0;
   const freshness: Freshness =
     options.maxAgeMinutes !== undefined
       ? {
@@ -339,6 +350,13 @@ export function buildRefineFlips(
 
     if (!best) continue;
 
+    const nutrition = refineNutrition(recipe.tier, recipe.enchant);
+    const stationFee = refineStationFee(
+      recipe.tier,
+      recipe.enchant,
+      stationFeePer100,
+    );
+
     flips.push({
       outputId: recipe.outputId,
       family: recipe.family,
@@ -352,6 +370,8 @@ export function buildRefineFlips(
       sellSide,
       grossCost: best.grossCost,
       effectiveCost: best.grossCost * (1 - rrr),
+      nutrition,
+      stationFee,
       revenue: sell.price,
       revenueCity: sell.city,
       revenueDate: sell.date,
@@ -432,6 +452,8 @@ export type ManualRefineResult = {
   }>;
   grossCost: number;
   effectiveCost: number;
+  nutrition: number;
+  stationFee: number;
   revenue: number;
   net: number;
   profit: number;
@@ -451,6 +473,7 @@ export function calcManualRefine(options: {
   useFocus?: boolean;
   dailyBonus?: DailyProductionBonus;
   taxRate?: number;
+  stationFeePer100?: number;
 }): ManualRefineResult | null {
   const ingredients = marketIngredients(options.recipe);
   if (!ingredients) return null;
@@ -464,6 +487,7 @@ export function calcManualRefine(options: {
   const useFocus = options.useFocus ?? true;
   const dailyBonus = options.dailyBonus ?? 0;
   const taxRate = options.taxRate ?? 0.04;
+  const stationFeePer100 = options.stationFeePer100 ?? 0;
   const rrr = resourceReturnRate(
     options.recipe.family,
     refineCity,
@@ -488,10 +512,19 @@ export function calcManualRefine(options: {
   }
 
   const effectiveCost = grossCost * (1 - rrr);
+  const nutrition = refineNutrition(
+    options.recipe.tier,
+    options.recipe.enchant,
+  );
+  const stationFee = refineStationFee(
+    options.recipe.tier,
+    options.recipe.enchant,
+    stationFeePer100,
+  );
   const revenue = Number(options.sellPrice) || 0;
   const net = netAfterTax(revenue, taxRate);
-  const profit = calcProfit(revenue, effectiveCost, taxRate);
-  const roi = calcRoi(revenue, effectiveCost, taxRate);
+  const profit = refineProfit(revenue, effectiveCost, taxRate, stationFee);
+  const roi = refineRoi(revenue, effectiveCost, taxRate, stationFee);
 
   return {
     refineCity,
@@ -499,6 +532,8 @@ export function calcManualRefine(options: {
     ingredients: lines,
     grossCost,
     effectiveCost,
+    nutrition,
+    stationFee,
     revenue,
     net,
     profit,
@@ -511,18 +546,28 @@ export function refineNet(revenue: number, taxRate: number): number {
   return netAfterTax(revenue, taxRate);
 }
 
+/** Material cost after RRR + station fee (fee is not RRR-scaled). */
+export function refineTotalCost(
+  effectiveCost: number,
+  stationFee: number = 0,
+): number {
+  return effectiveCost + Math.max(0, stationFee);
+}
+
 export function refineProfit(
   revenue: number,
   effectiveCost: number,
   taxRate: number,
+  stationFee: number = 0,
 ): number {
-  return calcProfit(revenue, effectiveCost, taxRate);
+  return calcProfit(revenue, refineTotalCost(effectiveCost, stationFee), taxRate);
 }
 
 export function refineRoi(
   revenue: number,
   effectiveCost: number,
   taxRate: number,
+  stationFee: number = 0,
 ): number {
-  return calcRoi(revenue, effectiveCost, taxRate);
+  return calcRoi(revenue, refineTotalCost(effectiveCost, stationFee), taxRate);
 }
