@@ -132,6 +132,19 @@ function cheapestInCities(
   return best;
 }
 
+/**
+ * Tokens / blueprints / quest mats only exist at Normal — Q1 fallback is OK.
+ * Gear bases (cape, SET armor, etc.) must match the craft output quality.
+ */
+export function craftIngredientAllowsQ1Fallback(itemId: string): boolean {
+  return (
+    itemId.includes("TOKEN") ||
+    itemId.includes("QUESTITEM") ||
+    itemId.endsWith("_BP") ||
+    itemId.includes("HEART")
+  );
+}
+
 function citySellForMode(
   itemId: string,
   quality: number,
@@ -142,7 +155,12 @@ function citySellForMode(
   const tryQuality = (q: number): CityQuote | null =>
     cheapestInCities(prices.get(qualityKey(itemId, q)), allowed);
 
-  return tryQuality(quality) ?? (quality !== 1 ? tryQuality(1) : null);
+  const exact = tryQuality(quality);
+  if (exact) return exact;
+  if (quality !== 1 && craftIngredientAllowsQ1Fallback(itemId)) {
+    return tryQuality(1);
+  }
+  return null;
 }
 
 function costAlternative(

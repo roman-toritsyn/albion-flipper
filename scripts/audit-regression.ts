@@ -90,9 +90,8 @@ async function auditCraftModes() {
   assert(!isCraftBuyMode("caerleon"), "lowercase caerleon invalid");
   assert(isCraftBuyMode("Caerleon"), "Caerleon valid");
 
-  // City isolation + math only (royal vs single-city costs may diverge when
-  // prefer-exact-quality finds a Q-match in another royal while a single city
-  // falls back to Q1 — expected with current quality rules).
+  // City isolation + math only (royal vs single-city costs may diverge:
+  // royal picks cheapest among 5 cities; tokens/BP/heart may Q1-fallback).
   for (const mode of CRAFT_BUY_MODES) {
     const allowed = allowedCitiesFor(mode);
     for (const f of byMode[mode]) {

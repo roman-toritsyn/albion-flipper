@@ -11,6 +11,7 @@ import {
 import {
   CRAFT_RECIPES,
   buildCraftFlipsBoth,
+  craftIngredientAllowsQ1Fallback,
   craftPriceItemIds,
   craftProfit,
   type CraftBuyMode,
@@ -80,7 +81,8 @@ function pickSell(
     return best;
   };
 
-  return atQ(quality) ?? (quality !== 1 ? atQ(1) : null);
+  return atQ(quality) ??
+    (quality !== 1 && craftIngredientAllowsQ1Fallback(itemId) ? atQ(1) : null);
 }
 
 function recomputeFlip(

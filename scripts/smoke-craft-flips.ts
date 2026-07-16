@@ -171,4 +171,46 @@ const royalRecipe: CraftRecipe = {
   assert(by.royal.length === 0 && by.Martlock.length === 0, "no BM");
 }
 
+// 7) Gear must match quality — Q1 cape must NOT price a Q5 craft
+{
+  const rows: AodpPriceRow[] = [
+    row("T4_CAPE", "Martlock", 1, 10_000, 0),
+    row("T4_CAPEITEM_DEMON_BP", "Martlock", 1, 20_000, 0),
+    row("T1_FACTION_STEPPE_TOKEN_1", "Martlock", 1, 5_000, 0),
+    row("T4_CAPEITEM_DEMON", "Black Market", 5, 0, 200_000),
+  ];
+  const q5 = buildCraftFlips(rows, [demonRecipe], [5], "royal");
+  assert(q5.length === 0, "Q5 must not use Q1 cape");
+}
+
+// 8) Tokens/BP may fall back to Q1; gear must be exact quality
+{
+  const rows: AodpPriceRow[] = [
+    row("T4_CAPE", "Martlock", 5, 80_000, 0),
+    row("T4_CAPEITEM_DEMON_BP", "Martlock", 1, 20_000, 0),
+    row("T1_FACTION_STEPPE_TOKEN_1", "Martlock", 1, 5_000, 0),
+    row("T4_CAPEITEM_DEMON", "Black Market", 5, 0, 200_000),
+  ];
+  const q5 = buildCraftFlips(rows, [demonRecipe], [5], "royal");
+  assert(q5.length === 1, "Q5 with Q5 cape + Q1 BP/token");
+  assert(q5[0].cost === 105_000, `q5 cost ${q5[0].cost}`);
+  assert(
+    q5[0].ingredients.find((i) => i.itemId === "T4_CAPE")?.unitPrice === 80_000,
+    "cape at Q5",
+  );
+}
+
+// 9) Royal SET gear: Q1 SET must not price Q5 royal craft
+{
+  const rows: AodpPriceRow[] = [
+    row("T4_ARMOR_PLATE_SET2", "Martlock", 1, 22_000, 0),
+    row("QUESTITEM_TOKEN_ROYAL_T4", "Martlock", 1, 5_000, 0),
+    row("T4_ARMOR_PLATE_ROYAL", "Black Market", 5, 0, 200_000),
+  ];
+  assert(
+    buildCraftFlips(rows, [royalRecipe], [5], "royal").length === 0,
+    "Q5 royal must not use Q1 SET",
+  );
+}
+
 console.log("smoke-craft-flips ok");
