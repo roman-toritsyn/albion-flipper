@@ -21,6 +21,12 @@ import { useLocale } from "@/lib/i18n";
 import type { LoadError } from "@/lib/loadError";
 import { parseLoadError } from "@/lib/loadError";
 import { QUALITIES, QUALITY_SHORT, type ItemQuality } from "@/lib/quality";
+import {
+  invalidateSiblingCityBmSessionCaches,
+  readSessionApiCache,
+  SESSION_API,
+  writeSessionApiCache,
+} from "@/lib/sessionApiCache";
 import type { AodpPriceRow, UpgradeFlipsResponse } from "@/lib/types";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -57,10 +63,29 @@ export function UpgradeDashboard() {
     else setLoading(true);
     setError(null);
     try {
+      if (!fresh) {
+        const cached = readSessionApiCache<UpgradeFlipsResponse>(
+          SESSION_API.upgrade,
+        );
+        if (cached) {
+          setRows(cached.rows);
+          setFetchedAt(cached.fetchedAt);
+          setCacheHit(true);
+          setNow(Date.now());
+          return;
+        }
+      }
+
       const url = fresh ? "/api/upgrade-flips?fresh=1" : "/api/upgrade-flips";
       const res = await fetch(url, { cache: "no-store" });
       const data = (await res.json()) as UpgradeFlipsResponse & ApiErrorBody;
       if (!res.ok) throw parseLoadError(res, data);
+
+      writeSessionApiCache(SESSION_API.upgrade, data);
+      if (fresh && !data.cacheHit) {
+        invalidateSiblingCityBmSessionCaches(SESSION_API.upgrade);
+      }
+
       setRows(data.rows);
       setFetchedAt(data.fetchedAt);
       setCacheHit(data.cacheHit);

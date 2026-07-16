@@ -21,6 +21,7 @@
     "smoke:craft-api": "tsx scripts/smoke-craft-api.ts",
     "smoke:refine-flips": "tsx scripts/smoke-refine-flips.ts",
     "smoke:upgrade-flips": "tsx scripts/smoke-upgrade-flips.ts",
+    "smoke:session-api-cache": "tsx scripts/smoke-session-api-cache.ts",
     "build:item-names": "tsx scripts/build-item-names.ts",
     "build:item-weights": "tsx scripts/build-item-weights.ts",
     "build:craft-recipes": "tsx scripts/build-craft-recipes.ts",

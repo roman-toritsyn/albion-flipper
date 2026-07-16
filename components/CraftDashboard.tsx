@@ -20,6 +20,12 @@ import { useLocale } from "@/lib/i18n";
 import type { LoadError } from "@/lib/loadError";
 import { parseLoadError } from "@/lib/loadError";
 import { QUALITIES, QUALITY_SHORT, type ItemQuality } from "@/lib/quality";
+import {
+  invalidateSiblingCityBmSessionCaches,
+  readSessionApiCache,
+  SESSION_API,
+  writeSessionApiCache,
+} from "@/lib/sessionApiCache";
 import type { CraftFlipsResponse } from "@/lib/types";
 import { CITY_LOCATIONS } from "@/lib/types";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -67,10 +73,27 @@ export function CraftDashboard() {
     else setLoading(true);
     setError(null);
     try {
+      if (!fresh) {
+        const cached = readSessionApiCache<CraftFlipsResponse>(SESSION_API.craft);
+        if (cached) {
+          setFlipsByMode(cached.flipsByMode);
+          setFetchedAt(cached.fetchedAt);
+          setCacheHit(true);
+          setNow(Date.now());
+          return;
+        }
+      }
+
       const url = fresh ? "/api/craft-flips?fresh=1" : "/api/craft-flips";
       const res = await fetch(url, { cache: "no-store" });
       const data = (await res.json()) as CraftFlipsResponse & ApiErrorBody;
       if (!res.ok) throw parseLoadError(res, data);
+
+      writeSessionApiCache(SESSION_API.craft, data);
+      if (fresh && !data.cacheHit) {
+        invalidateSiblingCityBmSessionCaches(SESSION_API.craft);
+      }
+
       setFlipsByMode(data.flipsByMode);
       setFetchedAt(data.fetchedAt);
       setCacheHit(data.cacheHit);

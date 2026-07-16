@@ -19,6 +19,11 @@ import {
 import { useLocale } from "@/lib/i18n";
 import type { LoadError } from "@/lib/loadError";
 import { parseLoadError } from "@/lib/loadError";
+import {
+  readSessionApiCache,
+  SESSION_API,
+  writeSessionApiCache,
+} from "@/lib/sessionApiCache";
 import type { AodpPriceRow, RefineFlipsResponse } from "@/lib/types";
 import { REFINE_CITIES } from "@/lib/types";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -60,10 +65,26 @@ export function RefineDashboard() {
     else setLoading(true);
     setError(null);
     try {
+      if (!fresh) {
+        const cached = readSessionApiCache<RefineFlipsResponse>(
+          SESSION_API.refine,
+        );
+        if (cached) {
+          setRows(cached.rows);
+          setFetchedAt(cached.fetchedAt);
+          setCacheHit(true);
+          setNow(Date.now());
+          return;
+        }
+      }
+
       const url = fresh ? "/api/refine-flips?fresh=1" : "/api/refine-flips";
       const res = await fetch(url, { cache: "no-store" });
       const data = (await res.json()) as RefineFlipsResponse & ApiErrorBody;
       if (!res.ok) throw parseLoadError(res, data);
+
+      writeSessionApiCache(SESSION_API.refine, data);
+
       setRows(data.rows);
       setFetchedAt(data.fetchedAt);
       setCacheHit(data.cacheHit);

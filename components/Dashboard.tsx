@@ -13,6 +13,12 @@ import { useLocale } from "@/lib/i18n";
 import type { LoadError } from "@/lib/loadError";
 import { parseLoadError } from "@/lib/loadError";
 import { qualityKey } from "@/lib/quality";
+import {
+  invalidateSiblingCityBmSessionCaches,
+  readSessionApiCache,
+  SESSION_API,
+  writeSessionApiCache,
+} from "@/lib/sessionApiCache";
 import { ROYAL_CITIES, type FlipOpportunity, type FlipsResponse } from "@/lib/types";
 import type { ApiErrorBody } from "@/lib/apiErrors";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -93,10 +99,26 @@ export function Dashboard() {
     setError(null);
 
     try {
+      if (!fresh) {
+        const cached = readSessionApiCache<FlipsResponse>(SESSION_API.flips);
+        if (cached) {
+          setRaw(cached.flips);
+          setFetchedAt(cached.fetchedAt);
+          setCacheHit(true);
+          setNow(Date.now());
+          return;
+        }
+      }
+
       const url = fresh ? "/api/flips?fresh=1" : "/api/flips";
       const res = await fetch(url, { cache: "no-store" });
       const data = (await res.json()) as FlipsResponse & ApiErrorBody;
       if (!res.ok) throw parseLoadError(res, data);
+
+      writeSessionApiCache(SESSION_API.flips, data);
+      if (fresh && !data.cacheHit) {
+        invalidateSiblingCityBmSessionCaches(SESSION_API.flips);
+      }
 
       setRaw(data.flips);
       setFetchedAt(data.fetchedAt);
