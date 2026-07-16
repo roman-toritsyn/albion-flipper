@@ -3,7 +3,13 @@
 import { CityPricesDropdown, type CityPriceQuote } from "@/components/CityPricesDropdown";
 import { QualityBadge } from "@/components/QualityBadge";
 import { isCityStalerThanBm } from "@/lib/calc";
-import { formatRoi, formatSignedSilver, formatSilver, itemIconUrl } from "@/lib/format";
+import {
+  formatItemTierEnchant,
+  formatRoi,
+  formatSignedSilver,
+  formatSilver,
+  itemIconUrl,
+} from "@/lib/format";
 import { useLocale } from "@/lib/i18n";
 import { formatAgeLabelT } from "@/lib/i18n/formatAge";
 import { itemDisplayName } from "@/lib/itemNames";
@@ -59,6 +65,7 @@ export function FlipRow({ flip, index = 0, now = Date.now(), cityQuotes = [] }: 
   const q = isItemQuality(flip.quality) ? flip.quality : 1;
   const qColors = QUALITY_COLORS[q];
   const displayName = itemDisplayName(flip.itemId, itemLang);
+  const tierEnchant = formatItemTierEnchant(flip.itemId);
 
   async function copyName(e: React.MouseEvent | React.PointerEvent) {
     e.stopPropagation();
@@ -162,10 +169,17 @@ export function FlipRow({ flip, index = 0, now = Date.now(), cityQuotes = [] }: 
                 {displayName}
               </p>
             </div>
-            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-              <QualityBadge quality={flip.quality} />
+            <div className="mt-2.5 flex flex-wrap items-center gap-2">
+              <div className="flex flex-col items-start gap-1.5">
+                <QualityBadge quality={flip.quality} />
+                {tierEnchant && (
+                  <span className="font-[family-name:var(--font-mono)] text-sm font-medium tabular leading-tight text-text">
+                    {tierEnchant}
+                  </span>
+                )}
+              </div>
               <span
-                className={`inline-block rounded-md border px-1.5 py-0.5 text-[10px] uppercase tracking-wider ${
+                className={`inline-block self-start rounded-md border px-1.5 py-0.5 text-[10px] uppercase tracking-wider ${
                   flip.kind === "local"
                     ? "border-brass/40 text-brass"
                     : "border-remote/40 text-remote"
